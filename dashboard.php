@@ -89,6 +89,11 @@ $all_posts = mysqli_query($conn, $posts_query);
                     <div class="d-flex justify-content-around text-muted">
                         <small style="cursor:pointer;">Like (Coming soon)</small>
                         <small style="cursor:pointer;">Comment (Coming soon)</small>
+                            <?php if($post['user_id'] == $_SESSION['user_id']): ?>
+                             <a href="delete_post.php?id=<?php echo $post['id']; ?>" class="text-danger text-decoration-none shadow-sm" onclick="return confirm('Are you sure?')">
+                        <small>Delete</small>
+                        </a>
+                        <?php endif; ?>
                     </div>
                 </div>
                 <?php endwhile; ?>
