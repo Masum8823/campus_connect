@@ -30,6 +30,8 @@ $posts_query = "SELECT posts.*, users.full_name, users.dept, users.role, users.p
                 JOIN users ON posts.user_id = users.id 
                 ORDER BY posts.created_at DESC";
 $all_posts = mysqli_query($conn, $posts_query);
+
+$notices_query = mysqli_query($conn, "SELECT * FROM notices ORDER BY created_at DESC LIMIT 5");
 ?>
 
 <!DOCTYPE html>
@@ -121,9 +123,26 @@ $all_posts = mysqli_query($conn, $posts_query);
             <!-- Right Sidebar (Notices) -->
             <div class="col-md-3">
                 <div class="card p-3 post-card">
-                    <h6 class="fw-bold"><i class="text-primary">●</i> Upcoming Events / Notices</h6>
+                    <h6 class="fw-bold"><i class="text-primary">●</i> Official Notices</h6>
                     <hr>
-                    <p class="text-muted small">No official notices yet. Please check back later.</p>
+                    
+                    <?php if(mysqli_num_rows($notices_query) > 0): ?>
+                        <?php while($notice = mysqli_fetch_assoc($notices_query)): ?>
+                            <div class="mb-3 border-bottom pb-2">
+                                <h6 class="mb-1 text-dark" style="font-size: 14px;"><?php echo $notice['title']; ?></h6>
+                                <small class="text-muted d-block" style="font-size: 11px;">
+                                    <i class="bi bi-clock"></i> <?php echo date('M d, Y', strtotime($notice['created_at'])); ?>
+                                </small>
+                                <p class="small text-secondary mb-1"><?php echo substr($notice['description'], 0, 50); ?>...</p>
+                            </div>
+                        <?php endwhile; ?>
+                    <?php else: ?>
+                        <p class="text-muted small text-center">No official notices yet.</p>
+                    <?php endif; ?>
+
+                    <?php if($_SESSION['role'] != 'student'): ?>
+                        <a href="add_notice.php" class="btn btn-sm btn-primary w-100 mt-2">Post New Notice</a>
+                    <?php endif; ?>
                 </div>
             </div>
 
