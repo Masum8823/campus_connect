@@ -134,6 +134,9 @@ $notices_query = mysqli_query($conn, "SELECT * FROM notices ORDER BY created_at 
                                     <i class="bi bi-clock"></i> <?php echo date('M d, Y', strtotime($notice['created_at'])); ?>
                                 </small>
                                 <p class="small text-secondary mb-1"><?php echo substr($notice['description'], 0, 50); ?>...</p>
+                                <a href="view_notice.php?id=<?php echo $notice['id']; ?>" class="text-primary text-decoration-none" style="font-size: 11px; font-weight: bold;">
+                                    Read Full Notice →
+                                </a>
                             </div>
                         <?php endwhile; ?>
                     <?php else: ?>
