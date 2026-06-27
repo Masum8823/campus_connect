@@ -11,16 +11,13 @@ $current_user_id = $_SESSION['user_id'];
 
 $user_info_query = mysqli_query($conn, "SELECT * FROM users WHERE id='$current_user_id'");
 $user_res = mysqli_fetch_assoc($user_info_query);
-
 $my_pic = ($user_res['profile_pic'] != 'default.png') ? $user_res['profile_pic'] : "https://ui-avatars.com/api/?name=".urlencode($_SESSION['user_name'])."&background=random";
 
 if(isset($_POST['submit_post'])){
     $content = mysqli_real_escape_string($conn, $_POST['content']);
-    
     if(!empty($content)){
-        $query = "INSERT INTO posts (user_id, content) VALUES ('$current_user_id', '$content')";
-        mysqli_query($conn, $query);
-        header("Location: dashboard.php"); 
+        mysqli_query($conn, "INSERT INTO posts (user_id, content) VALUES ('$current_user_id', '$content')");
+        header("Location: dashboard.php");
         exit();
     }
 }
@@ -38,18 +35,16 @@ $notices_query = mysqli_query($conn, "SELECT * FROM notices ORDER BY created_at 
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Campus Feed - CampusConnect</title>
+    <title>CampusConnect - Dashboard</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body { background-color: #f0f2f5; }
         .post-card { border-radius: 12px; border: none; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .navbar { position: sticky; top: 0; z-index: 1000; }
-        .profile-img { object-fit: cover; border: 2px solid #0d6efd; padding: 2px; }
+        .profile-img { object-fit: cover; border: 2px solid #0d6efd; }
     </style>
 </head>
 <body>
-    <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow sticky-top">
         <div class="container">
             <a class="navbar-brand fw-bold" href="dashboard.php">CampusConnect</a>
             <div class="d-flex align-items-center text-white">
@@ -62,7 +57,7 @@ $notices_query = mysqli_query($conn, "SELECT * FROM notices ORDER BY created_at 
     <div class="container mt-4">
         <div class="row justify-content-center">
             
-            <!-- Left Sidebar (User Profile Card) -->
+            <!-- Left Sidebar -->
             <div class="col-md-3">
                 <div class="card p-3 post-card text-center">
                     <img src="<?php echo $my_pic; ?>" class="rounded-circle mx-auto mb-3 profile-img" width="100" height="100">
@@ -73,9 +68,8 @@ $notices_query = mysqli_query($conn, "SELECT * FROM notices ORDER BY created_at 
                 </div>
             </div>
 
-            <!-- Middle Section (Feed) -->
+            <!-- Middle Feed -->
             <div class="col-md-6">
-                <!-- Post Box -->
                 <div class="card p-3 post-card">
                     <form method="POST">
                         <textarea name="content" class="form-control mb-2" rows="3" placeholder="What's on your mind, <?php echo $_SESSION['user_name']; ?>?" required></textarea>
@@ -84,36 +78,22 @@ $notices_query = mysqli_query($conn, "SELECT * FROM notices ORDER BY created_at 
                 </div>
 
                 <h5 class="mb-3 text-secondary">Campus Activity</h5>
-                
                 <?php while($post = mysqli_fetch_assoc($all_posts)): ?>
                     <div class="card p-3 post-card">
                         <div class="d-flex align-items-center mb-3">
-                            <?php 
-                                $post_user_pic = ($post['profile_pic'] != 'default.png') ? $post['profile_pic'] : "https://ui-avatars.com/api/?name=".urlencode($post['full_name'])."&background=random";
-                            ?>
-                            <img src="<?php echo $post_user_pic; ?>" class="rounded-circle me-2 profile-img" width="45" height="45">
-                            
+                            <?php $p_pic = ($post['profile_pic'] != 'default.png') ? $post['profile_pic'] : "https://ui-avatars.com/api/?name=".urlencode($post['full_name']); ?>
+                            <img src="<?php echo $p_pic; ?>" class="rounded-circle me-2 profile-img" width="45" height="45">
                             <div>
-                                <h6 class="mb-0"><?php echo $post['full_name']; ?> 
-                                    <small class="badge bg-light text-dark border ms-1" style="font-size: 10px;"><?php echo $post['role']; ?></small>
-                                </h6>
+                                <h6 class="mb-0"><?php echo $post['full_name']; ?> <small class="badge bg-light text-dark border ms-1" style="font-size: 10px;"><?php echo $post['role']; ?></small></h6>
                                 <small class="text-muted"><?php echo date('M d, h:i A', strtotime($post['created_at'])); ?> | <?php echo $post['dept']; ?></small>
                             </div>
                         </div>
-                        
-                        <p class="card-text" style="font-size: 1.05rem;"><?php echo nl2br($post['content']); ?></p>
-                        
-                        <hr class="text-muted">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div class="text-muted">
-                                <small class="me-3" style="cursor:pointer;">Like (soon)</small>
-                                <small style="cursor:pointer;">Comment (soon)</small>
-                            </div>
-
+                        <p class="card-text"><?php echo nl2br($post['content']); ?></p>
+                        <hr>
+                        <div class="d-flex justify-content-between">
+                            <small class="text-muted">Like • Comment</small>
                             <?php if($post['user_id'] == $_SESSION['user_id']): ?>
-                                <a href="delete_post.php?id=<?php echo $post['id']; ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure you want to delete this post?')">
-                                    Delete
-                                </a>
+                                <a href="delete_post.php?id=<?php echo $post['id']; ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete post?')">Delete</a>
                             <?php endif; ?>
                         </div>
                     </div>
@@ -123,24 +103,22 @@ $notices_query = mysqli_query($conn, "SELECT * FROM notices ORDER BY created_at 
             <!-- Right Sidebar (Notices) -->
             <div class="col-md-3">
                 <div class="card p-3 post-card">
-                    <h6 class="fw-bold"><i class="text-primary">●</i> Official Notices</h6>
+                    <h6 class="fw-bold text-primary">Official Notices</h6>
                     <hr>
-                    
                     <?php if(mysqli_num_rows($notices_query) > 0): ?>
                         <?php while($notice = mysqli_fetch_assoc($notices_query)): ?>
                             <div class="mb-3 border-bottom pb-2">
-                                <h6 class="mb-1 text-dark" style="font-size: 14px;"><?php echo $notice['title']; ?></h6>
-                                <small class="text-muted d-block" style="font-size: 11px;">
-                                    <i class="bi bi-clock"></i> <?php echo date('M d, Y', strtotime($notice['created_at'])); ?>
-                                </small>
-                                <p class="small text-secondary mb-1"><?php echo substr($notice['description'], 0, 50); ?>...</p>
-                                <a href="view_notice.php?id=<?php echo $notice['id']; ?>" class="text-primary text-decoration-none" style="font-size: 11px; font-weight: bold;">
-                                    Read Full Notice →
-                                </a>
+                                <h6 class="mb-1" style="font-size: 14px;"><?php echo $notice['title']; ?></h6>
+                                <small class="text-muted d-block mb-1" style="font-size: 11px;"><?php echo date('M d, Y', strtotime($notice['created_at'])); ?></small>
+                                <a href="view_notice.php?id=<?php echo $notice['id']; ?>" class="text-decoration-none small fw-bold">Read More →</a>
+                                
+                                <?php if($_SESSION['role'] != 'student' && $notice['user_id'] == $_SESSION['user_id']): ?>
+                                    <a href="delete_notice.php?id=<?php echo $notice['id']; ?>" class="text-danger ms-2 small text-decoration-none" onclick="return confirm('Delete notice?')">Delete</a>
+                                <?php endif; ?>
                             </div>
                         <?php endwhile; ?>
                     <?php else: ?>
-                        <p class="text-muted small text-center">No official notices yet.</p>
+                        <p class="text-muted small">No notices yet.</p>
                     <?php endif; ?>
 
                     <?php if($_SESSION['role'] != 'student'): ?>
@@ -151,7 +129,5 @@ $notices_query = mysqli_query($conn, "SELECT * FROM notices ORDER BY created_at 
 
         </div>
     </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
