@@ -144,6 +144,7 @@ $notices_query = mysqli_query($conn, "SELECT * FROM notices ORDER BY created_at 
                                     <!-- Notice Edit or Delete only for the Tacher who posts Notice -->
                                     <?php if($_SESSION['role'] != 'student' && $notice['user_id'] == $_SESSION['user_id']): ?>
                                         <div>
+                                            <a href="edit_notice.php?id=<?php echo $notice['id']; ?>" class="text-secondary me-1 text-decoration-none" style="font-size: 10px;">Edit</a>
                                             <a href="delete_notice.php?id=<?php echo $notice['id']; ?>" class="text-danger text-decoration-none" style="font-size: 10px;" onclick="return confirm('Delete notice?')">Delete</a>
                                         </div>
                                     <?php endif; ?>
