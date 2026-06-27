@@ -34,3 +34,19 @@ CREATE TABLE notices (
 );
 
 SET FOREIGN_KEY_CHECKS = 1;
+
+-- 2nd Change in DB (for Delete Post whcih a teacher posts)
+
+ALTER TABLE notices ADD COLUMN user_id INT AFTER id;
+
+--- DB for Comment Option
+
+CREATE TABLE IF NOT EXISTS comments (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    post_id INT,
+    user_id INT,
+    comment_text TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
