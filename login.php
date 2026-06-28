@@ -45,7 +45,10 @@ if(isset($_POST['login'])){
                         </div>
                         <button name="login" class="btn btn-primary w-100">Login</button>
                     </form>
-                    <p class="mt-3 text-center">New here? <a href="register.php">Create Account</a></p>
+                    <p class="mt-3 text-center">
+                        <a href="forgot_password.php" class="text-danger small">Forgot Password?</a><br>
+                        New here? <a href="register.php">Create Account</a> <br>
+                    </p>
                 </div>
             </div>
         </div>
