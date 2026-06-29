@@ -1,9 +1,9 @@
 <?php
-include 'config.php';
+include '../config.php';
 session_start();
 
 if(!isset($_GET['id'])){
-    header("Location: dashboard.php");
+    header("Location: ../user/dashboard.php");
     exit();
 }
 
@@ -26,7 +26,8 @@ if(!$notice){
 <body class="bg-light">
     <nav class="navbar navbar-dark bg-primary shadow mb-4">
         <div class="container">
-            <a class="navbar-brand" href="dashboard.php">CampusConnect</a>
+            <!-- Correct path back to dashboard -->
+            <a class="navbar-brand fw-bold" href="../user/dashboard.php">CampusConnect</a>
         </div>
     </nav>
 
@@ -41,7 +42,7 @@ if(!$notice){
                         <?php echo $notice['description']; ?>
                     </p>
                     <hr>
-                    <a href="dashboard.php" class="btn btn-outline-secondary">← Back to Dashboard</a>
+                    <a href="../user/dashboard.php" class="btn btn-outline-secondary">← Back to Dashboard</a>
                 </div>
             </div>
         </div>

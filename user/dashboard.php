@@ -1,31 +1,34 @@
 <?php
-include 'config.php';
+// 1. Path updated to go one level up to find config.php
+include '../config.php'; 
 session_start();
 
-// 1. Check if user is logged in
+// 2. Check if user is logged in - Redirect path updated to auth folder
 if(!isset($_SESSION['user_id'])){
-    header("Location: login.php");
+    header("Location: ../auth/login.php");
     exit();
 }
 
 $current_user_id = $_SESSION['user_id'];
 
-// 2. Fetch current user information
+// 3. Fetch current user information
 $user_info_query = mysqli_query($conn, "SELECT * FROM users WHERE id='$current_user_id'");
 $user_res = mysqli_fetch_assoc($user_info_query);
-$my_pic = ($user_res['profile_pic'] != 'default.png') ? $user_res['profile_pic'] : "https://ui-avatars.com/api/?name=".urlencode($_SESSION['user_name'])."&background=random";
 
-// 3. Logic for handling new posts
+// 4. Profile Picture Path logic - Adding ../ because uploads folder is in root
+$my_pic = ($user_res['profile_pic'] != 'default.png') ? "../" . $user_res['profile_pic'] : "https://ui-avatars.com/api/?name=".urlencode($_SESSION['user_name'])."&background=random";
+
+// 5. Logic for handling new posts
 if(isset($_POST['submit_post'])){
     $content = mysqli_real_escape_string($conn, $_POST['content']);
     if(!empty($content)){
         mysqli_query($conn, "INSERT INTO posts (user_id, content) VALUES ('$current_user_id', '$content')");
-        header("Location: dashboard.php");
+        header("Location: dashboard.php"); // Same folder, no change needed
         exit();
     }
 }
 
-// 4. Logic for handling new comments
+// 6. Logic for handling new comments
 if(isset($_POST['submit_comment'])){
     $post_id = $_POST['post_id'];
     $comment_text = mysqli_real_escape_string($conn, $_POST['comment_text']);
@@ -37,14 +40,14 @@ if(isset($_POST['submit_comment'])){
     }
 }
 
-// 5. Fetch all posts with user details
+// 7. Fetch all posts with user details
 $posts_query = "SELECT posts.*, users.full_name, users.dept, users.role, users.profile_pic 
                 FROM posts 
                 JOIN users ON posts.user_id = users.id 
                 ORDER BY posts.created_at DESC";
 $all_posts = mysqli_query($conn, $posts_query);
 
-// 6. Fetch latest notices
+// 8. Fetch latest notices
 $notices_query = mysqli_query($conn, "SELECT * FROM notices ORDER BY created_at DESC LIMIT 5");
 ?>
 
@@ -69,7 +72,8 @@ $notices_query = mysqli_query($conn, "SELECT * FROM notices ORDER BY created_at 
             <a class="navbar-brand fw-bold" href="dashboard.php">CampusConnect</a>
             <div class="d-flex align-items-center text-white">
                 <span class="me-3">Hi, <?php echo $_SESSION['user_name']; ?></span>
-                <a href="logout.php" class="btn btn-light btn-sm text-primary fw-bold">Logout</a>
+                <!-- Path updated to auth folder -->
+                <a href="../auth/logout.php" class="btn btn-light btn-sm text-primary fw-bold">Logout</a>
             </div>
         </div>
     </nav>
@@ -84,6 +88,7 @@ $notices_query = mysqli_query($conn, "SELECT * FROM notices ORDER BY created_at 
                     <h5 class="mb-0"><?php echo $_SESSION['user_name']; ?></h5>
                     <p class="text-muted small"><?php echo strtoupper($_SESSION['role']); ?><br>Dept: <?php echo $_SESSION['dept']; ?></p>
                     <hr>
+                    <!-- Profile is in the same folder 'user', so no change -->
                     <a href="profile.php" class="btn btn-outline-primary btn-sm w-100">Update Profile Picture</a>
                 </div>
             </div>
@@ -104,7 +109,10 @@ $notices_query = mysqli_query($conn, "SELECT * FROM notices ORDER BY created_at 
                 <?php while($post = mysqli_fetch_assoc($all_posts)): ?>
                     <div class="card p-3 post-card">
                         <div class="d-flex align-items-center mb-3">
-                            <?php $p_pic = ($post['profile_pic'] != 'default.png') ? $post['profile_pic'] : "https://ui-avatars.com/api/?name=".urlencode($post['full_name']); ?>
+                            <?php 
+                            // Update post user pic path
+                            $p_pic = ($post['profile_pic'] != 'default.png') ? "../" . $post['profile_pic'] : "https://ui-avatars.com/api/?name=".urlencode($post['full_name']); 
+                            ?>
                             <img src="<?php echo $p_pic; ?>" class="rounded-circle me-2 profile-img" width="45" height="45">
                             <div>
                                 <h6 class="mb-0"><?php echo $post['full_name']; ?> 
@@ -124,13 +132,14 @@ $notices_query = mysqli_query($conn, "SELECT * FROM notices ORDER BY created_at 
                             </div>
                             <?php if($post['user_id'] == $_SESSION['user_id']): ?>
                                 <div>
-                                    <a href="edit_post.php?id=<?php echo $post['id']; ?>" class="btn btn-sm btn-outline-secondary py-0" style="font-size: 11px;">Edit</a>
-                                    <a href="delete_post.php?id=<?php echo $post['id']; ?>" class="btn btn-sm btn-outline-danger py-0" style="font-size: 11px;" onclick="return confirm('Delete post?')">Delete</a>
+                                    <!-- Path updated to post folder -->
+                                    <a href="../post/edit_post.php?id=<?php echo $post['id']; ?>" class="btn btn-sm btn-outline-secondary py-0" style="font-size: 11px;">Edit</a>
+                                    <a href="../post/delete_post.php?id=<?php echo $post['id']; ?>" class="btn btn-sm btn-outline-danger py-0" style="font-size: 11px;" onclick="return confirm('Delete post?')">Delete</a>
                                 </div>
                             <?php endif; ?>
                         </div>
 
-                        <!-- Comments Section for the current post -->
+                        <!-- Comments Section -->
                         <div class="p-2 border-top bg-light rounded shadow-sm">
                             <?php
                             $current_post_id = $post['id'];
@@ -143,7 +152,6 @@ $notices_query = mysqli_query($conn, "SELECT * FROM notices ORDER BY created_at 
                                 </div>
                             <?php endwhile; ?>
 
-                            <!-- Comment Input Field -->
                             <form method="POST" class="mt-2 d-flex">
                                 <input type="hidden" name="post_id" value="<?php echo $post['id']; ?>">
                                 <input type="text" name="comment_text" class="form-control form-control-sm me-2" placeholder="Write a comment..." required>
@@ -165,9 +173,10 @@ $notices_query = mysqli_query($conn, "SELECT * FROM notices ORDER BY created_at 
                                 <h6 class="mb-1" style="font-size: 14px;"><?php echo $notice['title']; ?></h6>
                                 <small class="text-muted d-block mb-1" style="font-size: 11px;"><?php echo date('M d, Y', strtotime($notice['created_at'])); ?></small>
                                 <div class="d-flex justify-content-between">
-                                    <a href="view_notice.php?id=<?php echo $notice['id']; ?>" class="text-decoration-none small fw-bold">Read More →</a>
+                                    <!-- Path updated to notice folder -->
+                                    <a href="../notice/view_notice.php?id=<?php echo $notice['id']; ?>" class="text-decoration-none small fw-bold">Read More →</a>
                                     <?php if($_SESSION['role'] != 'student' && $notice['user_id'] == $_SESSION['user_id']): ?>
-                                        <a href="delete_notice.php?id=<?php echo $notice['id']; ?>" class="text-danger small" onclick="return confirm('Delete notice?')">Delete</a>
+                                        <a href="../notice/delete_notice.php?id=<?php echo $notice['id']; ?>" class="text-danger small" onclick="return confirm('Delete notice?')">Delete</a>
                                     <?php endif; ?>
                                 </div>
                             </div>
@@ -176,7 +185,8 @@ $notices_query = mysqli_query($conn, "SELECT * FROM notices ORDER BY created_at 
                         <p class="text-muted small">No official notices yet.</p>
                     <?php endif; ?>
                     <?php if($_SESSION['role'] != 'student'): ?>
-                        <a href="add_notice.php" class="btn btn-sm btn-primary w-100 mt-2">Post Notice</a>
+                        <!-- Path updated to notice folder -->
+                        <a href="../notice/add_notice.php" class="btn btn-sm btn-primary w-100 mt-2">Post Notice</a>
                     <?php endif; ?>
                 </div>
             </div>

@@ -1,9 +1,9 @@
 <?php
-include 'config.php';
+include '../config.php'; // Correct path
 session_start();
 
 if(isset($_POST['login'])){
-    $email = $_POST['email'];
+    $email = mysqli_real_escape_string($conn, $_POST['email']);
     $pass = $_POST['password'];
 
     $result = mysqli_query($conn, "SELECT * FROM users WHERE email='$email'");
@@ -15,13 +15,14 @@ if(isset($_POST['login'])){
         $_SESSION['role'] = $user['role'];
         $_SESSION['dept'] = $user['dept'];
         
-        header("Location: dashboard.php");
+        // Success: Go back one level then into 'user' folder
+        header("Location: ../user/dashboard.php");
+        exit();
     } else {
         echo "<script>alert('Invalid Email or Password!');</script>";
     }
 }
 ?>
-
 <!DOCTYPE html>
 <html>
 <head>
@@ -46,6 +47,7 @@ if(isset($_POST['login'])){
                         <button name="login" class="btn btn-primary w-100">Login</button>
                     </form>
                     <p class="mt-3 text-center">
+                        <!-- Same folder, direct link -->
                         <a href="forgot_password.php" class="text-danger small">Forgot Password?</a><br>
                         New here? <a href="register.php">Create Account</a> <br>
                     </p>

@@ -1,7 +1,8 @@
 <?php
-include 'config.php';
+include '../config.php'; // Correct path to root config
 session_start();
 
+// Security: Only teachers/admins can post notices
 if(!isset($_SESSION['user_id']) || $_SESSION['role'] == 'student'){
     echo "Access Denied! Only Teachers/Admins can post notices.";
     exit();
@@ -17,7 +18,8 @@ if(isset($_POST['add_notice'])){
               VALUES ('$user_id', '$title', '$desc', '$audience')";
               
     if(mysqli_query($conn, $query)){
-        echo "<script>alert('Notice Posted!'); window.location='dashboard.php';</script>";
+        // Success: Redirect to dashboard inside user folder
+        echo "<script>alert('Notice Posted!'); window.location='../user/dashboard.php';</script>";
     } else {
         echo "Error: " . mysqli_error($conn);
     }
@@ -56,7 +58,8 @@ if(isset($_POST['add_notice'])){
                     <button name="add_notice" class="btn btn-primary w-100 fw-bold">Publish Notice</button>
                 </form>
                 <div class="text-center mt-3">
-                    <a href="dashboard.php" class="text-decoration-none">Back to Dashboard</a>
+                    <!-- Correct path back to dashboard -->
+                    <a href="../user/dashboard.php" class="text-decoration-none">Back to Dashboard</a>
                 </div>
             </div>
         </div>

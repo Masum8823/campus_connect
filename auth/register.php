@@ -1,10 +1,10 @@
 <?php
-include 'config.php';
+include '../config.php';
 
 if(isset($_POST['register'])){
-    $name = $_POST['name'];
-    $u_id = $_POST['u_id']; // Student/Teacher ID
-    $email = $_POST['email'];
+    $name = mysqli_real_escape_string($conn, $_POST['name']);
+    $u_id = mysqli_real_escape_string($conn, $_POST['u_id']);
+    $email = mysqli_real_escape_string($conn, $_POST['email']);
     $pass = password_hash($_POST['password'], PASSWORD_DEFAULT);
     $role = $_POST['role'];
     $dept = $_POST['dept'];
@@ -15,11 +15,11 @@ if(isset($_POST['register'])){
     if(mysqli_query($conn, $query)){
         echo "<script>alert('Registration Successful!'); window.location='login.php';</script>";
     } else {
-        echo "<div class='alert alert-danger'>Error: ID or Email already exists!</div>";
+        echo "<div class='alert alert-danger text-center'>Error: ID or Email already exists!</div>";
     }
-}
+}   
 ?>
-
+<!-- Rest of the HTML stays the same, just ensure links are correct -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
