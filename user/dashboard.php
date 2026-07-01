@@ -15,7 +15,7 @@ $current_user_id = $_SESSION['user_id'];
 $user_info_query = mysqli_query($conn, "SELECT * FROM users WHERE id='$current_user_id'");
 $user_res = mysqli_fetch_assoc($user_info_query);
 
-// 4. Profile Picture Path logic - Adding ../ because uploads folder is in root
+// 4. Profile Picture Path logic
 $my_pic = ($user_res['profile_pic'] != 'default.png') ? "../" . $user_res['profile_pic'] : "https://ui-avatars.com/api/?name=".urlencode($_SESSION['user_name'])."&background=random";
 
 // 5. Logic for handling new posts
@@ -23,7 +23,7 @@ if(isset($_POST['submit_post'])){
     $content = mysqli_real_escape_string($conn, $_POST['content']);
     if(!empty($content)){
         mysqli_query($conn, "INSERT INTO posts (user_id, content) VALUES ('$current_user_id', '$content')");
-        header("Location: dashboard.php"); // Same folder, no change needed
+        header("Location: dashboard.php"); 
         exit();
     }
 }
@@ -66,13 +66,11 @@ $notices_query = mysqli_query($conn, "SELECT * FROM notices ORDER BY created_at 
     </style>
 </head>
 <body>
-    <!-- Navigation Bar -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow sticky-top">
         <div class="container">
             <a class="navbar-brand fw-bold" href="dashboard.php">CampusConnect</a>
             <div class="d-flex align-items-center text-white">
                 <span class="me-3">Hi, <?php echo $_SESSION['user_name']; ?></span>
-                <!-- Path updated to auth folder -->
                 <a href="../auth/logout.php" class="btn btn-light btn-sm text-primary fw-bold">Logout</a>
             </div>
         </div>
@@ -81,21 +79,18 @@ $notices_query = mysqli_query($conn, "SELECT * FROM notices ORDER BY created_at 
     <div class="container mt-4">
         <div class="row justify-content-center">
             
-            <!-- Sidebar: User Info -->
             <div class="col-md-3">
                 <div class="card p-3 post-card text-center shadow-sm">
                     <img src="<?php echo $my_pic; ?>" class="rounded-circle mx-auto mb-3 profile-img" width="100" height="100">
                     <h5 class="mb-0"><?php echo $_SESSION['user_name']; ?></h5>
+                    <!-- role displaying ALUMNI automatically -->
                     <p class="text-muted small"><?php echo strtoupper($_SESSION['role']); ?><br>Dept: <?php echo $_SESSION['dept']; ?></p>
                     <hr>
-                    <!-- Profile is in the same folder 'user', so no change -->
                     <a href="profile.php" class="btn btn-outline-primary btn-sm w-100">Update Profile Picture</a>
                 </div>
             </div>
 
-            <!-- Main Feed -->
             <div class="col-md-6">
-                <!-- Create Post Section -->
                 <div class="card p-3 post-card">
                     <form method="POST">
                         <textarea name="content" class="form-control mb-2" rows="3" placeholder="What's on your mind, <?php echo $_SESSION['user_name']; ?>?" required></textarea>
@@ -105,17 +100,16 @@ $notices_query = mysqli_query($conn, "SELECT * FROM notices ORDER BY created_at 
 
                 <h5 class="mb-3 text-secondary border-bottom pb-2">Campus Activity</h5>
                 
-                <!-- Display Each Post -->
                 <?php while($post = mysqli_fetch_assoc($all_posts)): ?>
                     <div class="card p-3 post-card">
                         <div class="d-flex align-items-center mb-3">
                             <?php 
-                            // Update post user pic path
                             $p_pic = ($post['profile_pic'] != 'default.png') ? "../" . $post['profile_pic'] : "https://ui-avatars.com/api/?name=".urlencode($post['full_name']); 
                             ?>
                             <img src="<?php echo $p_pic; ?>" class="rounded-circle me-2 profile-img" width="45" height="45">
                             <div>
                                 <h6 class="mb-0"><?php echo $post['full_name']; ?> 
+                                    <!-- This will show 'alumni' badge if the user is an alumni -->
                                     <small class="badge bg-light text-dark border ms-1" style="font-size: 10px;"><?php echo $post['role']; ?></small>
                                 </h6>
                                 <small class="text-muted"><?php echo date('M d, h:i A', strtotime($post['created_at'])); ?> | <?php echo $post['dept']; ?></small>
@@ -132,14 +126,12 @@ $notices_query = mysqli_query($conn, "SELECT * FROM notices ORDER BY created_at 
                             </div>
                             <?php if($post['user_id'] == $_SESSION['user_id']): ?>
                                 <div>
-                                    <!-- Path updated to post folder -->
                                     <a href="../post/edit_post.php?id=<?php echo $post['id']; ?>" class="btn btn-sm btn-outline-secondary py-0" style="font-size: 11px;">Edit</a>
                                     <a href="../post/delete_post.php?id=<?php echo $post['id']; ?>" class="btn btn-sm btn-outline-danger py-0" style="font-size: 11px;" onclick="return confirm('Delete post?')">Delete</a>
                                 </div>
                             <?php endif; ?>
                         </div>
 
-                        <!-- Comments Section -->
                         <div class="p-2 border-top bg-light rounded shadow-sm">
                             <?php
                             $current_post_id = $post['id'];
@@ -162,7 +154,6 @@ $notices_query = mysqli_query($conn, "SELECT * FROM notices ORDER BY created_at 
                 <?php endwhile; ?>
             </div>
 
-            <!-- Right Sidebar: Notices -->
             <div class="col-md-3">
                 <div class="card p-3 post-card shadow-sm sticky-top" style="top: 80px;">
                     <h6 class="fw-bold text-primary">Official Notices</h6>
@@ -173,9 +164,8 @@ $notices_query = mysqli_query($conn, "SELECT * FROM notices ORDER BY created_at 
                                 <h6 class="mb-1" style="font-size: 14px;"><?php echo $notice['title']; ?></h6>
                                 <small class="text-muted d-block mb-1" style="font-size: 11px;"><?php echo date('M d, Y', strtotime($notice['created_at'])); ?></small>
                                 <div class="d-flex justify-content-between">
-                                    <!-- Path updated to notice folder -->
                                     <a href="../notice/view_notice.php?id=<?php echo $notice['id']; ?>" class="text-decoration-none small fw-bold">Read More →</a>
-                                    <?php if($_SESSION['role'] != 'student' && $notice['user_id'] == $_SESSION['user_id']): ?>
+                                    <?php if(($_SESSION['role'] == 'teacher' || $_SESSION['role'] == 'admin') && $notice['user_id'] == $_SESSION['user_id']): ?>
                                         <a href="../notice/delete_notice.php?id=<?php echo $notice['id']; ?>" class="text-danger small" onclick="return confirm('Delete notice?')">Delete</a>
                                     <?php endif; ?>
                                 </div>
@@ -184,8 +174,9 @@ $notices_query = mysqli_query($conn, "SELECT * FROM notices ORDER BY created_at 
                     <?php else: ?>
                         <p class="text-muted small">No official notices yet.</p>
                     <?php endif; ?>
-                    <?php if($_SESSION['role'] != 'student'): ?>
-                        <!-- Path updated to notice folder -->
+
+                    <!-- IMPORTANT CHANGE HERE: Only Teachers and Admins can see "Post Notice" button -->
+                    <?php if($_SESSION['role'] == 'teacher' || $_SESSION['role'] == 'admin'): ?>
                         <a href="../notice/add_notice.php" class="btn btn-sm btn-primary w-100 mt-2">Post Notice</a>
                     <?php endif; ?>
                 </div>

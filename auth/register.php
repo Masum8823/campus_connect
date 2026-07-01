@@ -50,6 +50,7 @@ if(isset($_POST['register'])){
                         <select name="role" class="form-control">
                             <option value="student">Student</option>
                             <option value="teacher">Teacher</option>
+                            <option value="alumni">Alumni</option> 
                         </select>
                     </div>
                 </div>
