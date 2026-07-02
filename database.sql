@@ -54,3 +54,19 @@ CREATE TABLE IF NOT EXISTS comments (
 --- DB for Alumni Role
 
 ALTER TABLE users MODIFY COLUMN role ENUM('student', 'teacher', 'admin', 'alumni') DEFAULT 'student';
+
+--- DB for Lost and Found
+
+CREATE TABLE IF NOT EXISTS lost_found (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT,
+    item_name VARCHAR(255) NOT NULL,
+    category VARCHAR(100),
+    description TEXT,
+    item_status ENUM('lost', 'found') NOT NULL,
+    item_image VARCHAR(255) DEFAULT 'no_image.png',
+    contact_info VARCHAR(255),
+    is_resolved TINYINT(1) DEFAULT 0, -- 0 = Active, 1 = Found/Returned
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
