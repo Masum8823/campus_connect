@@ -69,7 +69,10 @@ if(isset($_POST['post_item'])){
                     <input type="file" name="item_image" class="form-control mb-3">
                     <button name="post_item" class="btn btn-primary w-100 fw-bold">Post Item</button>
                 </form>
-                <a href="../user/dashboard.php" class="text-center d-block mt-3">Back to Dashboard</a>
+                <div class="text-center mt-3">
+                    <a href="index.php" class="btn btn-secondary btn-sm">← Back to Lost & Found</a>
+                    <a href="../user/dashboard.php" class="btn btn-outline-primary btn-sm">Dashboard Home</a>
+                </div>
             </div>
         </div>
     </div>
