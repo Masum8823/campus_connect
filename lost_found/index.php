@@ -24,9 +24,11 @@ $items = mysqli_query($conn, $query);
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <style>
         body { background-color: #f8f9fa; }
-        .item-card { transition: transform 0.2s; border: none; border-radius: 15px; overflow: hidden; }
-        .item-card:hover { transform: translateY(-5px); }
-        .resolved-overlay { background: rgba(25, 135, 84, 0.9); color: white; font-weight: bold; }
+        .item-card { transition: transform 0.2s; border: none; border-radius: 15px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .item-card:hover { transform: translateY(-5px); box-shadow: 0 8px 15px rgba(0,0,0,0.1); }
+        .resolved-overlay { background: rgba(25, 135, 84, 0.9); color: white; font-weight: bold; position: absolute; width: 100%; top: 0; z-index: 2; }
+        .item-img-container { position: relative; height: 200px; overflow: hidden; }
+        .item-img-container img { height: 100%; width: 100%; object-fit: cover; }
     </style>
 </head>
 <body>
@@ -63,18 +65,23 @@ $items = mysqli_query($conn, $query);
                                 </div>
                             <?php endif; ?>
 
-                            <!-- Item Image -->
-                            <?php if($row['item_image'] != 'no_image.png' && !empty($row['item_image'])): ?>
-                                <img src="../<?php echo $row['item_image']; ?>" class="card-img-top" style="height: 200px; object-fit: cover; <?php echo ($row['is_resolved'] == 1) ? 'filter: grayscale(100%); opacity: 0.6;' : ''; ?>">
-                            <?php else: ?>
-                                <div class="bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
-                                    <i class="bi bi-image text-muted display-1"></i>
-                                </div>
-                            <?php endif; ?>
+                            <!-- Clickable Image Container -->
+                            <div class="item-img-container">
+                                <a href="view_item.php?id=<?php echo $row['id']; ?>">
+                                    <?php if($row['item_image'] != 'no_image.png' && !empty($row['item_image'])): ?>
+                                        <img src="../<?php echo $row['item_image']; ?>" alt="Item Image" style="<?php echo ($row['is_resolved'] == 1) ? 'filter: grayscale(100%); opacity: 0.6;' : ''; ?>">
+                                    <?php else: ?>
+                                        <div class="bg-light d-flex align-items-center justify-content-center h-100">
+                                            <i class="bi bi-image text-muted display-1"></i>
+                                        </div>
+                                    <?php endif; ?>
+                                </a>
+                            </div>
 
                             <div class="card-body d-flex flex-column">
                                 <div class="d-flex justify-content-between align-items-start mb-2">
                                     <span class="badge <?php echo $row['item_status'] == 'lost' ? 'bg-danger' : 'bg-success'; ?> text-uppercase">
+                                        <i class="bi <?php echo $row['item_status'] == 'lost' ? 'bi-exclamation-triangle' : 'bi-check-circle'; ?>"></i>
                                         <?php echo $row['item_status']; ?>
                                     </span>
                                     <small class="text-muted" style="font-size: 11px;"><?php echo date('M d, Y', strtotime($row['created_at'])); ?></small>
@@ -83,9 +90,16 @@ $items = mysqli_query($conn, $query);
                                 <h5 class="card-title fw-bold <?php echo ($row['is_resolved'] == 1) ? 'text-muted text-decoration-line-through' : 'text-dark'; ?>">
                                     <?php echo $row['item_name']; ?>
                                 </h5>
+                                
+                                <!-- Short Description -->
                                 <p class="card-text text-secondary small flex-grow-1">
-                                    <?php echo nl2br($row['description']); ?>
+                                    <?php echo nl2br(substr($row['description'], 0, 80)); ?>...
                                 </p>
+                                
+                                <!-- NEW: View Details Button -->
+                                <a href="view_item.php?id=<?php echo $row['id']; ?>" class="btn btn-sm btn-primary w-100 fw-bold mb-3 shadow-sm">
+                                    View Full Details
+                                </a>
                                 
                                 <hr class="text-muted my-2">
                                 
@@ -96,8 +110,8 @@ $items = mysqli_query($conn, $query);
 
                                 <!-- Action Buttons: Only for Owner -->
                                 <?php if($row['user_id'] == $_SESSION['user_id']): ?>
-                                    <div class="d-flex gap-2">
-                                        <a href="edit_item.php?id=<?php echo $row['id']; ?>" class="btn btn-sm btn-outline-primary flex-grow-1" style="font-size: 11px;">
+                                    <div class="d-flex gap-2 border-top pt-2">
+                                        <a href="edit_item.php?id=<?php echo $row['id']; ?>" class="btn btn-sm btn-outline-secondary flex-grow-1" style="font-size: 11px;">
                                             <i class="bi bi-pencil-square"></i> Edit / Status
                                         </a>
                                         <a href="delete_item.php?id=<?php echo $row['id']; ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this post?')" style="font-size: 11px;">
@@ -117,5 +131,7 @@ $items = mysqli_query($conn, $query);
             <?php endif; ?>
         </div>
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
