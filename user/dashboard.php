@@ -63,6 +63,8 @@ $notices_query = mysqli_query($conn, "SELECT * FROM notices ORDER BY created_at 
         .post-card { border-radius: 12px; border: none; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         .profile-img { object-fit: cover; border: 2px solid #0d6efd; padding: 2px; }
         .comment-box { background-color: #f8f9fa; border-radius: 8px; padding: 8px; margin-bottom: 5px; }
+        .sidebar-link { transition: all 0.2s; }
+        .sidebar-link:hover { background-color: #e9ecef; transform: translateX(5px); }
     </style>
 </head>
 <body>
@@ -81,6 +83,7 @@ $notices_query = mysqli_query($conn, "SELECT * FROM notices ORDER BY created_at 
             
             <!-- Left Sidebar -->
             <div class="col-md-3">
+                <!-- User Profile Card -->
                 <div class="card p-3 post-card text-center shadow-sm">
                     <img src="<?php echo $my_pic; ?>" class="rounded-circle mx-auto mb-3 profile-img" width="100" height="100">
                     <h5 class="mb-0 small fw-bold"><?php echo $_SESSION['user_name']; ?></h5>
@@ -88,10 +91,25 @@ $notices_query = mysqli_query($conn, "SELECT * FROM notices ORDER BY created_at 
                     <hr>
                     <a href="profile.php" class="btn btn-outline-primary btn-sm w-100 mb-2">Update Profile Picture</a>
                     
-                    <!-- NEW: Lost & Found Button -->
                     <a href="../lost_found/index.php" class="btn btn-info btn-sm w-100 text-white fw-bold shadow-sm">
                         <i class="bi bi-search"></i> Lost & Found Section
                     </a>
+                </div>
+
+                <!-- NEW: Academic Hub Section -->
+                <div class="card p-3 post-card shadow-sm mt-3">
+                    <h6 class="fw-bold text-primary mb-3" style="font-size: 14px;"><i class="bi bi-book-half"></i> Academic Hub</h6>
+                    <div class="d-grid gap-2">
+                        <a href="../academic/index.php" class="btn btn-light btn-sm text-start sidebar-link border">
+                            <i class="bi bi-calendar-check text-primary"></i> Routines & Materials
+                        </a>
+                        <a href="../academic/assignments.php" class="btn btn-light btn-sm text-start sidebar-link border">
+                            <i class="bi bi-file-earmark-text text-danger"></i> Assignments
+                        </a>
+                        <a href="../academic/gpa_calculator.php" class="btn btn-light btn-sm text-start sidebar-link border">
+                            <i class="bi bi-calculator text-success"></i> GPA Calculator
+                        </a>
+                    </div>
                 </div>
             </div>
 

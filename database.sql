@@ -70,3 +70,30 @@ CREATE TABLE IF NOT EXISTS lost_found (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
+
+--- DB for Academic Section
+
+-- Table for Academic Files (Routines, Notes, Materials)
+CREATE TABLE IF NOT EXISTS academic_files (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT,
+    title VARCHAR(255) NOT NULL,
+    category ENUM('class_routine', 'exam_routine', 'course_material') NOT NULL,
+    dept VARCHAR(50),
+    file_path VARCHAR(255) NOT NULL,
+    uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Table for Assignments
+CREATE TABLE IF NOT EXISTS assignments (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    teacher_id INT,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    deadline DATETIME,
+    file_path VARCHAR(255),
+    dept VARCHAR(50),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (teacher_id) REFERENCES users(id) ON DELETE CASCADE
+);
