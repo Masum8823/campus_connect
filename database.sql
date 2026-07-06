@@ -97,3 +97,69 @@ CREATE TABLE IF NOT EXISTS assignments (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (teacher_id) REFERENCES users(id) ON DELETE CASCADE
 );
+
+---link option for academic part
+
+ALTER TABLE academic_files MODIFY COLUMN file_path VARCHAR(255) NULL;
+ALTER TABLE academic_files ADD COLUMN external_link TEXT NULL AFTER file_path;
+
+--- DB for CGPA Calculator
+
+CREATE TABLE IF NOT EXISTS gpa_records (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT,
+    semester_name VARCHAR(100),
+    gpa DECIMAL(3,2),
+    total_credits INT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+
+--- update for cgpa calculator
+
+DROP TABLE IF EXISTS gpa_records;
+
+CREATE TABLE gpa_records (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT,
+    semester_name VARCHAR(100),
+    gpa DECIMAL(3,2),
+    total_credits INT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY unique_semester (user_id, semester_name), 
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE gpa_details (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    record_id INT,
+    course_name VARCHAR(255),
+    credits INT,
+    grade DECIMAL(3,2),
+    FOREIGN KEY (record_id) REFERENCES gpa_records(id) ON DELETE CASCADE
+);
+
+--- DB for Assignment Module
+
+CREATE TABLE IF NOT EXISTS assignments (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    teacher_id INT,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    deadline DATETIME,
+    file_path VARCHAR(255), 
+    dept VARCHAR(50),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (teacher_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS assignment_submissions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    assignment_id INT,
+    student_id INT,
+    submission_file VARCHAR(255),
+    submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (assignment_id) REFERENCES assignments(id) ON DELETE CASCADE,
+    FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE
+);
