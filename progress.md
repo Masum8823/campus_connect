@@ -49,6 +49,39 @@ Tracking the build progress of **CampusConnect – Student Collaboration Hub**.
 - ✅ Doc: Project Development Log
 ---
 
+### July 1, 2026
+- ✅ Feat: Implement Alumni Role
+- ✅ Feat: Update Role-Based Dashboard Permissions
+
+### July 2, 2026
+- ✅ Feat: Implement Lost & Found Module
+- ✅ Feat: Add Item Posting and Feed System for Lost & Found
+
+### July 4, 2026
+- ✅ Feat: Add Edit, Delete and Resolved Status for Lost & Found Items
+- ✅ Refactor: Improve Lost & Found UX and Add Dashboard Navigation
+
+### July 5, 2026
+- ✅ Feat: Add Full Details View and Large Image Preview for Lost & Found Items
+
+### July 6, 2026
+- ✅ Feat: Setup Academic Module Basic Structure
+- ✅ Feat: Integrate Academic Module with Sidebar
+- ✅ Feat: Allow Sharing External Links Alongside Files in Academic Hub
+
+### July 7, 2026
+- ✅ Feat: Add Search and Date Sorting in Academic Hub
+- ✅ Feat: Implement GPA Calculator with Master-Detail Database Structure
+- ✅ Feat: Add Clickable GPA Record Details
+- ✅ Fix: Resolve GPA Saving Issues
+- ✅ Feat: Implement Assignment Module in Academic Hub
+- ✅ Feat: Add Read More Functionality for Assignment Descriptions
+- ✅ Feat: Implement Student Assignment Submission with File Upload and Deadline Validation
+- ✅ Feat: Add Teacher Portal to View and Download Assignment Submissions
+- ✅ Feat: Add Search and Sorting Capabilities in Assignment Module
+
+---
+
 ## 🚧 Upcoming / Planned Features
 - [ ] Study Groups module
 - [ ] Lost and Found module
