@@ -163,3 +163,8 @@ CREATE TABLE IF NOT EXISTS assignment_submissions (
     FOREIGN KEY (assignment_id) REFERENCES assignments(id) ON DELETE CASCADE,
     FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE
 );
+
+--- DB for Authentication(User Registration OTP)
+
+ALTER TABLE users ADD COLUMN otp VARCHAR(6) NULL;
+ALTER TABLE users ADD COLUMN is_verified TINYINT(1) DEFAULT 0; -- 0 = Not Verified, 1 = Verified
