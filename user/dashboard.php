@@ -126,6 +126,14 @@ $all_posts = mysqli_query($conn, $posts_query);
             <a href="../academic/index.php" class="nav-link">
                 <i class="bi bi-book text-success"></i> <span>Academic Hub</span>
             </a>
+            <a href="requests.php" class="nav-link">
+                <i class="bi bi-person-plus text-danger"></i> <span>Connection Requests</span>
+                <?php 
+                $count_req = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM connections WHERE receiver_id='$current_user_id' AND status='pending'"));
+                if($count_req['total'] > 0): ?>
+                    <span class="badge bg-danger rounded-pill float-end"><?php echo $count_req['total']; ?></span>
+                <?php endif; ?>
+            </a>
             <a href="profile.php" class="nav-link">
                 <i class="bi bi-person-badge text-secondary"></i> <span>My Profile</span>
             </a>
