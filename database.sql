@@ -168,3 +168,12 @@ CREATE TABLE IF NOT EXISTS assignment_submissions (
 
 ALTER TABLE users ADD COLUMN otp VARCHAR(6) NULL;
 ALTER TABLE users ADD COLUMN is_verified TINYINT(1) DEFAULT 0; -- 0 = Not Verified, 1 = Verified
+
+-- DB for User Profile
+
+ALTER TABLE users 
+ADD COLUMN phone VARCHAR(20) NULL,
+ADD COLUMN bio TEXT NULL,
+ADD COLUMN batch VARCHAR(50) NULL,
+ADD COLUMN skills VARCHAR(255) NULL,
+ADD COLUMN linkedin_url VARCHAR(255) NULL;
