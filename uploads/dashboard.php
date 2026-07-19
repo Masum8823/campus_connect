@@ -162,7 +162,14 @@ $notices_query = mysqli_query($conn, "SELECT * FROM notices ORDER BY created_at 
                     <?php if(mysqli_num_rows($notices_query) > 0): ?>
                         <?php while($notice = mysqli_fetch_assoc($notices_query)): ?>
                             <div class="mb-3 border-bottom pb-2">
-                                <h6 class="mb-1" style="font-size: 14px;"><?php echo $notice['title']; ?></h6>
+                                <h6 class="mb-0 fw-bold">
+                                    <a href="profile.php?id=<?php echo $post['user_id']; ?>" class="text-decoration-none text-dark">
+                                        <?php echo $post['full_name']; ?> 
+                                    </a>
+                                    <span class="badge bg-light text-dark border ms-1 fw-normal" style="font-size: 10px;">
+                                        <?php echo strtoupper($post['role']); ?>
+                                    </span>
+                                </h6>
                                 <small class="text-muted d-block mb-1" style="font-size: 11px;"><?php echo date('M d, Y', strtotime($notice['created_at'])); ?></small>
                                 <div class="d-flex justify-content-between">
                                     <a href="view_notice.php?id=<?php echo $notice['id']; ?>" class="text-decoration-none small fw-bold">Read More →</a>

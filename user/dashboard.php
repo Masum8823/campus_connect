@@ -105,7 +105,10 @@ $all_posts = mysqli_query($conn, $posts_query);
     <!-- Sidebar Navigation -->
     <div class="sidebar d-none d-md-block">
         <div class="text-center mb-4">
-            <img src="<?php echo $my_pic; ?>" class="rounded-circle profile-img-sidebar mb-3">
+            <!-- Clicking picture here also goes to your own profile -->
+            <a href="profile.php">
+                <img src="<?php echo $my_pic; ?>" class="rounded-circle profile-img-sidebar mb-3">
+            </a>
             <h5 class="fw-bold mb-0"><?php echo $_SESSION['user_name']; ?></h5>
             <p class="text-muted small"><?php echo strtoupper($_SESSION['role']); ?> | <?php echo $_SESSION['dept']; ?></p>
         </div>
@@ -124,7 +127,7 @@ $all_posts = mysqli_query($conn, $posts_query);
                 <i class="bi bi-book text-success"></i> <span>Academic Hub</span>
             </a>
             <a href="profile.php" class="nav-link">
-                <i class="bi bi-gear text-secondary"></i> <span>Settings</span>
+                <i class="bi bi-person-badge text-secondary"></i> <span>My Profile</span>
             </a>
         </nav>
     </div>
@@ -154,10 +157,17 @@ $all_posts = mysqli_query($conn, $posts_query);
                     <div class="card post-card">
                         <div class="card-body">
                             <div class="d-flex align-items-center mb-3">
-                                <?php $p_pic = ($post['profile_pic'] != 'default.png') ? "../" . $post['profile_pic'] : "https://ui-avatars.com/api/?name=".urlencode($post['full_name']); ?>
-                                <img src="<?php echo $p_pic; ?>" class="rounded-circle me-2 border" width="45" height="45" style="object-fit: cover;">
+                                <!-- Clicking other users picture also goes to their profile -->
+                                <a href="profile.php?id=<?php echo $post['user_id']; ?>">
+                                    <?php $p_pic = ($post['profile_pic'] != 'default.png') ? "../" . $post['profile_pic'] : "https://ui-avatars.com/api/?name=".urlencode($post['full_name']); ?>
+                                    <img src="<?php echo $p_pic; ?>" class="rounded-circle me-2 border" width="45" height="45" style="object-fit: cover;">
+                                </a>
                                 <div>
-                                    <h6 class="mb-0 fw-bold"><?php echo $post['full_name']; ?> 
+                                    <!-- UPDATED: User name is now a clickable link to their profile -->
+                                    <h6 class="mb-0 fw-bold">
+                                        <a href="profile.php?id=<?php echo $post['user_id']; ?>" class="text-decoration-none text-dark">
+                                            <?php echo $post['full_name']; ?> 
+                                        </a>
                                         <span class="badge bg-light text-dark border ms-1 fw-normal" style="font-size: 10px;"><?php echo strtoupper($post['role']); ?></span>
                                     </h6>
                                     <small class="text-muted" style="font-size: 12px;"><?php echo date('M d, h:i A', strtotime($post['created_at'])); ?> • <i class="bi bi-globe-americas"></i></small>
