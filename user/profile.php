@@ -20,6 +20,20 @@ if(!$user){
 }
 
 $profile_img = ($user['profile_pic'] != 'default.png') ? "../" . $user['profile_pic'] : "https://ui-avatars.com/api/?name=".urlencode($user['full_name'])."&background=random&size=128";
+
+$conn_status_query = mysqli_query($conn, "SELECT * FROM connections WHERE (sender_id='".$_SESSION['user_id']."' AND receiver_id='$view_user_id') OR (sender_id='$view_user_id' AND receiver_id='".$_SESSION['user_id']."')");
+$conn_data = mysqli_fetch_assoc($conn_status_query);
+
+$is_connected = false;
+$is_pending = false;
+
+if($conn_data){
+    if($conn_data['status'] == 'accepted'){
+        $is_connected = true;
+    } else {
+        $is_pending = true;
+    }
+}
 ?>
 
 <!DOCTYPE html>
@@ -62,16 +76,25 @@ $profile_img = ($user['profile_pic'] != 'default.png') ? "../" . $user['profile_
                                 <p class="small text-secondary italic">"<?php echo $user['bio'] ?? 'No bio added yet.'; ?>"</p>
                             </div>
 
-                            <!-- ৪. যদি নিজের প্রোফাইল হয় তবেই Edit বাটন দেখাবে -->
                             <?php if($is_my_profile): ?>
-                                <a href="edit_profile.php" class="btn btn-outline-primary btn-sm w-100 mt-3 rounded-pill">
-                                    <i class="bi bi-pencil-square"></i> Edit Profile
+                            <a href="edit_profile.php" class="btn btn-outline-primary btn-sm w-100 mt-3 rounded-pill">
+                                <i class="bi bi-pencil-square"></i> Edit Profile
+                            </a>
+                        <?php else: ?>
+                            <?php if($is_connected): ?>
+                                <a href="toggle_connect.php?id=<?php echo $view_user_id; ?>" class="btn btn-success btn-sm w-100 mt-3 rounded-pill">
+                                    <i class="bi bi-person-check-fill"></i> Connected
+                                </a>
+                            <?php elseif($is_pending): ?>
+                                <a href="toggle_connect.php?id=<?php echo $view_user_id; ?>" class="btn btn-warning btn-sm w-100 mt-3 rounded-pill">
+                                    <i class="bi bi-clock-history"></i> Request Pending
                                 </a>
                             <?php else: ?>
-                                <button class="btn btn-primary btn-sm w-100 mt-3 rounded-pill">
-                                    <i class="bi bi-person-plus"></i> Connect
-                                </button>
+                                <a href="toggle_connect.php?id=<?php echo $view_user_id; ?>" class="btn btn-primary btn-sm w-100 mt-3 rounded-pill">
+                                    <i class="bi bi-person-plus-fill"></i> Connect
+                                </a>
                             <?php endif; ?>
+                        <?php endif; ?>
                         </div>
 
                         <div class="col-md-8 ps-md-5 mt-4 mt-md-0">

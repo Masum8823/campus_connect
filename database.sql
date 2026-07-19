@@ -177,3 +177,15 @@ ADD COLUMN bio TEXT NULL,
 ADD COLUMN batch VARCHAR(50) NULL,
 ADD COLUMN skills VARCHAR(255) NULL,
 ADD COLUMN linkedin_url VARCHAR(255) NULL;
+
+--- DB for User Connections
+
+CREATE TABLE IF NOT EXISTS connections (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    sender_id INT,
+    receiver_id INT,
+    status ENUM('pending', 'accepted') DEFAULT 'pending',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (receiver_id) REFERENCES users(id) ON DELETE CASCADE
+);
