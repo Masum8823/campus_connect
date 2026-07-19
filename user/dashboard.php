@@ -134,6 +134,14 @@ $all_posts = mysqli_query($conn, $posts_query);
                     <span class="badge bg-danger rounded-pill float-end"><?php echo $count_req['total']; ?></span>
                 <?php endif; ?>
             </a>
+
+            <a href="my_connections.php" class="nav-link">
+            <i class="bi bi-people text-primary"></i> <span>My Network</span>
+            <?php 
+            $count_conn = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM connections WHERE (sender_id='$current_user_id' OR receiver_id='$current_user_id') AND status='accepted'"));
+            ?>
+            <span class="badge bg-primary rounded-pill float-end"><?php echo $count_conn['total']; ?></span>
+            </a>
             <a href="profile.php" class="nav-link">
                 <i class="bi bi-person-badge text-secondary"></i> <span>My Profile</span>
             </a>
