@@ -43,12 +43,10 @@ $all_posts = mysqli_query($conn, $posts_query);
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     
     <style>
-        /* --- Standard Design System --- */
         :root {
             --primary-color: #0d6efd;
             --sidebar-width: 280px;
             --bg-light: #f0f2f5;
-            --card-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
         }
 
         body {
@@ -57,111 +55,110 @@ $all_posts = mysqli_query($conn, $posts_query);
             padding-top: 70px;
         }
 
-        /* Fixed Sidebar */
-        .sidebar {
-            position: fixed;
-            top: 70px;
-            left: 0;
-            bottom: 0;
-            width: var(--sidebar-width);
-            background: white;
-            padding: 20px;
-            border-right: 1px solid #dee2e6;
-            overflow-y: auto;
-            z-index: 1000;
-        }
-
-        /* Sidebar Nav Links */
-        .nav-link {
-            display: flex;
-            align-items: center;
-            padding: 12px 15px;
-            color: #4b4f56;
-            font-weight: 500;
-            border-radius: 10px;
-            margin-bottom: 5px;
-            transition: all 0.2s;
-        }
-
-        .nav-link:hover {
-            background-color: #f2f2f2;
-            color: var(--primary-color);
-        }
-
-        .nav-link.active {
-            background-color: #e7f3ff;
-            color: var(--primary-color);
-        }
-
-        .nav-link i {
-            font-size: 1.3rem;
-            margin-right: 12px;
-        }
-
-        /* Feed Area */
-        .main-content {
-            margin-left: var(--sidebar-width);
-            padding: 20px;
-        }
-
-        .feed-container {
-            max-width: 680px;
-            margin: 0 auto;
-        }
-
-        /* Post Cards */
-        .post-card {
-            background: white;
+        /* --- Navbar & Dropdown Styling --- */
+        .navbar { background-color: var(--primary-color) !important; }
+        
+        .dropdown-menu {
             border-radius: 12px;
             border: none;
-            box-shadow: var(--card-shadow);
-            margin-bottom: 20px;
-            overflow: hidden;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+            padding: 10px;
+            min-width: 230px;
         }
 
-        .post-input-box {
-            background: #f0f2f5;
-            border-radius: 25px;
-            padding: 10px 20px;
-            cursor: pointer;
-            border: none;
-            width: 100%;
-            text-align: left;
-            color: #65676b;
+        .dropdown-header-custom {
+            padding: 10px 15px;
+            border-bottom: 1px solid #eee;
+            margin-bottom: 10px;
         }
 
-        .post-input-box:hover {
-            background: #e4e6e9;
+        .dropdown-item {
+            border-radius: 8px;
+            padding: 10px 15px;
+            font-weight: 500;
+            color: #4b4f56;
+            transition: 0.2s;
+        }
+
+        .dropdown-item:hover {
+            background-color: #f0f2f5;
+            color: var(--primary-color);
+        }
+
+        .dropdown-item i {
+            font-size: 1.1rem;
+            margin-right: 10px;
         }
 
         /* Avatar Styling */
+        .nav-profile-img {
+            width: 38px;
+            height: 38px;
+            object-fit: cover;
+            border: 2px solid white;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .nav-profile-img:hover { opacity: 0.9; transform: scale(1.05); }
+
+        /* Sidebar & Post styling stays same as before */
+        .sidebar { position: fixed; top: 70px; left: 0; bottom: 0; width: var(--sidebar-width); background: white; padding: 20px; border-right: 1px solid #dee2e6; overflow-y: auto; z-index: 1000; }
+        .nav-link { display: flex; align-items: center; padding: 12px 15px; color: #4b4f56; font-weight: 500; border-radius: 10px; margin-bottom: 5px; transition: all 0.2s; }
+        .nav-link:hover { background-color: #f2f2f2; color: var(--primary-color); }
+        .nav-link.active { background-color: #e7f3ff; color: var(--primary-color); }
+        .nav-link i { font-size: 1.3rem; margin-right: 12px; }
+        .main-content { margin-left: var(--sidebar-width); padding: 20px; }
+        .feed-container { max-width: 680px; margin: 0 auto; }
+        .post-card { background: white; border-radius: 12px; border: none; box-shadow: 0 2px 12px rgba(0,0,0,0.08); margin-bottom: 20px; overflow: hidden; }
+        .post-input-box { background: #f0f2f5; border-radius: 25px; padding: 10px 20px; cursor: pointer; border: none; width: 100%; text-align: left; color: #65676b; }
         .avatar-md { width: 45px; height: 45px; object-fit: cover; border-radius: 50%; }
-        .avatar-sm { width: 36px; height: 36px; object-fit: cover; border-radius: 50%; }
 
         @media (max-width: 992px) {
             .sidebar { width: 85px; }
             .sidebar span, .sidebar h6, .sidebar p, .sidebar hr { display: none; }
             .main-content { margin-left: 85px; }
-            .nav-link { justify-content: center; padding: 15px; }
-            .nav-link i { margin: 0; }
         }
     </style>
 </head>
 <body>
 
     <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top shadow-sm">
+    <nav class="navbar navbar-expand-lg navbar-dark fixed-top shadow-sm">
         <div class="container">
             <a class="navbar-brand fw-bold fs-4" href="dashboard.php">
                 <i class="bi bi-connectdevelop"></i> CampusConnect
             </a>
             <div class="ms-auto d-flex align-items-center">
                 <div class="dropdown">
-                    <img src="<?php echo $my_pic; ?>" class="rounded-circle border border-2 border-white" width="35" height="35" role="button" data-bs-toggle="dropdown">
-                    <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2">
-                        <li><a class="dropdown-item" href="profile.php"><i class="bi bi-person me-2"></i> My Profile</a></li>
+                    <!-- Updated Nav Profile Avatar -->
+                    <img src="<?php echo $my_pic; ?>" class="rounded-circle nav-profile-img" data-bs-toggle="dropdown">
+                    
+                    <!-- Modernized Dropdown Menu -->
+                    <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-3 animate slideIn">
+                        <div class="dropdown-header-custom">
+                            <h6 class="fw-bold mb-0 text-dark"><?php echo $_SESSION['user_name']; ?></h6>
+                            <small class="text-muted"><?php echo $_SESSION['dept']; ?> | <?php echo ucfirst($_SESSION['role']); ?></small>
+                        </div>
+                        
+                        <li>
+                            <a class="dropdown-item d-flex align-items-center" href="profile.php">
+                                <i class="bi bi-person-circle text-primary"></i>
+                                <span>My Profile</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item d-flex align-items-center" href="edit_profile.php">
+                                <i class="bi bi-gear text-secondary"></i>
+                                <span>Settings</span>
+                            </a>
+                        </li>
                         <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item text-danger" href="../auth/logout.php"><i class="bi bi-box-arrow-right me-2"></i> Logout</a></li>
+                        <li>
+                            <a class="dropdown-item d-flex align-items-center text-danger" href="../auth/logout.php">
+                                <i class="bi bi-box-arrow-right"></i>
+                                <span>Log Out</span>
+                            </a>
+                        </li>
                     </ul>
                 </div>
             </div>
@@ -207,8 +204,15 @@ $all_posts = mysqli_query($conn, $posts_query);
                 </div>
             </div>
 
-            <!-- Posts List -->
-            <?php while($post = mysqli_fetch_assoc($all_posts)): ?>
+            <!-- Feed Posts (Like logic merged) -->
+            <?php while($post = mysqli_fetch_assoc($all_posts)): 
+                $pid = $post['id'];
+                $like_res = mysqli_query($conn, "SELECT COUNT(*) as total FROM likes WHERE post_id='$pid'");
+                $total_likes = mysqli_fetch_assoc($like_res)['total'];
+                $is_liked = mysqli_num_rows(mysqli_query($conn, "SELECT * FROM likes WHERE post_id='$pid' AND user_id='$current_user_id'")) > 0;
+                $c_res = mysqli_query($conn, "SELECT COUNT(*) as total FROM comments WHERE post_id='$pid'");
+                $total_comments = mysqli_fetch_assoc($c_res)['total'];
+            ?>
                 <div class="card post-card">
                     <div class="card-body p-3">
                         <div class="d-flex align-items-center mb-3">
@@ -227,21 +231,16 @@ $all_posts = mysqli_query($conn, $posts_query);
                         <p class="card-text px-1" style="font-size: 15px;"><?php echo nl2br($post['content']); ?></p>
                         
                         <div class="d-flex justify-content-around border-top border-bottom py-2 my-3">
-                            <button class="btn btn-link text-decoration-none text-muted fw-bold btn-sm p-0"><i class="bi bi-hand-thumbs-up me-1"></i> Like</button>
+                            <a href="toggle_like.php?post_id=<?php echo $pid; ?>" class="btn btn-link text-decoration-none fw-bold btn-sm p-0 <?php echo $is_liked ? 'text-primary' : 'text-muted'; ?>">
+                                <i class="bi <?php echo $is_liked ? 'bi-hand-thumbs-up-fill' : 'bi-hand-thumbs-up'; ?> me-1"></i> <?php echo $total_likes; ?> Like
+                            </a>
                             <a href="../post/view_post.php?id=<?php echo $post['id']; ?>" class="btn btn-link text-decoration-none text-muted fw-bold btn-sm p-0">
                                 <i class="bi bi-chat-left me-1"></i> Comment
                             </a>
                             <button class="btn btn-link text-decoration-none text-muted fw-bold btn-sm p-0"><i class="bi bi-share me-1"></i> Share</button>
                         </div>
-
-                        <!-- Mini Comment Count -->
-                        <?php
-                            $pid = $post['id'];
-                            $c_res = mysqli_query($conn, "SELECT COUNT(*) as total FROM comments WHERE post_id='$pid'");
-                            $c_data = mysqli_fetch_assoc($c_res);
-                        ?>
                         <a href="../post/view_post.php?id=<?php echo $pid; ?>" class="text-decoration-none text-muted small fw-bold px-1">
-                            <?php echo ($c_data['total'] > 0) ? "View all ".$c_data['total']." comments" : "Be the first to comment"; ?>
+                            <?php echo ($total_comments > 0) ? "View all $total_comments comments" : "Be the first to comment"; ?>
                         </a>
                     </div>
                 </div>
@@ -259,7 +258,7 @@ $all_posts = mysqli_query($conn, $posts_query);
                 </div>
                 <form method="POST">
                     <div class="modal-body">
-                        <textarea name="content" class="form-control border-0 fs-5" rows="4" placeholder="What's on your mind, <?php echo explode(' ', $_SESSION['user_name'])[0]; ?>?" required style="resize: none;"></textarea>
+                        <textarea name="content" class="form-control border-0 fs-5" rows="4" placeholder="What's on your mind?" required style="resize: none;"></textarea>
                     </div>
                     <div class="modal-footer border-0">
                         <button name="submit_post" class="btn btn-primary w-100 fw-bold py-2 shadow">Post to Feed</button>
