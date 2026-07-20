@@ -2,6 +2,12 @@
 include '../config.php';
 session_start();
 
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
+require 'PHPMailer/Exception.php';
+require 'PHPMailer/PHPMailer.php';
+require 'PHPMailer/SMTP.php';
+
 if(isset($_POST['login'])){
     $email = mysqli_real_escape_string($conn, $_POST['email']);
     $pass = $_POST['password'];
@@ -10,10 +16,34 @@ if(isset($_POST['login'])){
     $user = mysqli_fetch_assoc($result);
 
     if($user && password_verify($pass, $user['password'])){
+        
         if($user['is_verified'] == 0){
-            echo "<script>alert('Please verify your email first!'); window.location='verify_otp.php';</script>";
-            $_SESSION['temp_email'] = $email;
-            exit();
+            $new_otp = rand(100000, 999999);
+            mysqli_query($conn, "UPDATE users SET otp = '$new_otp' WHERE email = '$email'");
+
+            $mail = new PHPMailer(true);
+            try {
+                $mail->isSMTP();
+                $mail->Host       = 'smtp.gmail.com';
+                $mail->SMTPAuth   = true;
+                $mail->Username   = 'masum688823@gmail.com'; 
+                $mail->Password   = 'qpcm gmol tydu rqed';   
+                $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+                $mail->Port       = 587;
+
+                $mail->setFrom('masum688823@gmail.com', 'CampusConnect');
+                $mail->addAddress($email);
+                $mail->isHTML(true);
+                $mail->Subject = 'Account Verification - CampusConnect';
+                $mail->Body    = "Your verification OTP is: <b>$new_otp</b>";
+                $mail->send();
+
+                $_SESSION['temp_email'] = $email;
+                echo "<script>alert('Your account is not verified. A new OTP has been sent to your email.'); window.location='verify_otp.php';</script>";
+                exit();
+            } catch (Exception $e) {
+                $error = "Verification needed, but failed to send email.";
+            }
         }
         
         $_SESSION['user_id'] = $user['id'];
