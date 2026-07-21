@@ -219,3 +219,16 @@ CREATE TABLE IF NOT EXISTS alumni_stories (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
+
+
+-- DB for Alumni Hub's Inspire counter
+
+CREATE TABLE IF NOT EXISTS alumni_inspired (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    story_id INT,
+    user_id INT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY unique_inspire (story_id, user_id),
+    FOREIGN KEY (story_id) REFERENCES alumni_stories(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
