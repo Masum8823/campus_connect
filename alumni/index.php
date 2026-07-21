@@ -107,7 +107,7 @@ $stories = mysqli_query($conn, $query);
                                         <span class="text-muted">Tech Stack:</span> 
                                         <span class="badge bg-light text-primary border ms-1"><?php echo $row['skills_used']; ?></span>
                                     </div>
-                                    <button class="btn btn-outline-primary btn-sm rounded-pill px-4 fw-bold shadow-sm">View Full Roadmap →</button>
+                                    <a href="view_journey.php?id=<?php echo $row['id']; ?>" class="btn btn-outline-primary btn-sm rounded-pill px-4 fw-bold shadow-sm">View Full Roadmap →</a>
                                 </div>
                             </div>
                         </div>
