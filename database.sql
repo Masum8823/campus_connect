@@ -232,3 +232,16 @@ CREATE TABLE IF NOT EXISTS alumni_inspired (
     FOREIGN KEY (story_id) REFERENCES alumni_stories(id) ON DELETE CASCADE,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
+
+-- Db for Alumni Hub's Mentorship Platform
+
+CREATE TABLE IF NOT EXISTS alumni_qna (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    story_id INT,
+    student_id INT,
+    question_text TEXT,
+    answer_text TEXT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (story_id) REFERENCES alumni_stories(id) ON DELETE CASCADE,
+    FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE
+);
