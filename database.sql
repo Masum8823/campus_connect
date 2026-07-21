@@ -201,3 +201,21 @@ CREATE TABLE IF NOT EXISTS likes (
     FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
+
+--DB for Alumni Hub
+
+CREATE TABLE IF NOT EXISTS alumni_stories (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT,
+    current_job_title VARCHAR(255),
+    company_name VARCHAR(255),
+    journey_story TEXT,
+    skills_used VARCHAR(255), -- Tech stack/Skills
+    career_roadmap TEXT,      -- Year 1 to Final Year guidance
+    biggest_mistake TEXT,
+    advice_to_juniors TEXT,
+    first_salary VARCHAR(50) NULL, -- Optional
+    inspired_count INT DEFAULT 0,  -- Like/Inspire Meter
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
