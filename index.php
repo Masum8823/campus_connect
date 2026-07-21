@@ -3,117 +3,224 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Welcome to CampusConnect</title>
-    <!-- Bootstrap 5 CSS -->
+    <title>CampusConnect | Your University Network</title>
+    
+    <!-- Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <!-- Animate.css -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
     
     <style>
-        body { font-family: 'Inter', sans-serif; overflow-x: hidden; }
-        .navbar { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
-        .hero-section {
-            background: linear-gradient(135deg, #0d6efd 0%, #003d99 100%);
+        :root {
+            --primary-bg: #0d6efd;
+            --secondary-bg: #4b0082;
+            --text-dark: #2d3436;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            overflow-x: hidden;
+            background-color: #fff;
+            color: var(--text-dark);
+        }
+
+        /* Hero Wrapper */
+        .hero-wrapper {
+            position: relative;
+            background: linear-gradient(135deg, var(--primary-bg) 0%, var(--secondary-bg) 100%);
+            min-height: 100vh;
             color: white;
-            padding: 120px 0 100px;
-            clip-path: ellipse(150% 100% at 50% 0%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            overflow: hidden;
         }
+
+        .navbar {
+            background: rgba(255, 255, 255, 0.05) !important;
+            backdrop-filter: blur(15px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 15px 0;
+        }
+
+        .hero-title {
+            font-weight: 800;
+            font-size: 4.2rem;
+            line-height: 1.1;
+            background: linear-gradient(to right, #ffffff, #a5c9ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Features Section */
+        .features-section {
+            padding: 100px 0;
+            background-color: #ffffff;
+        }
+
         .feature-card {
-            border: none;
+            padding: 30px;
             border-radius: 20px;
-            transition: 0.3s;
-            background: #f8f9fa;
+            border: 1px solid #f0f0f0;
+            background: #fff;
+            transition: all 0.3s ease;
+            height: 100%;
+            text-align: center;
         }
+
         .feature-card:hover {
             transform: translateY(-10px);
-            box-shadow: 0 15px 30px rgba(0,0,0,0.1);
-            background: #fff;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.05);
+            border-color: var(--primary-bg);
         }
-        .icon-box {
+
+        .icon-wrapper {
             width: 60px;
             height: 60px;
             background: #e7f1ff;
-            color: #0d6efd;
+            color: var(--primary-bg);
             border-radius: 15px;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 24px;
-            margin-bottom: 20px;
+            margin: 0 auto 20px;
         }
+
+        .floating-icon {
+            animation: floating 3s ease-in-out infinite;
+        }
+
+        @keyframes floating {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+
+        .wave-bottom {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            line-height: 0;
+        }
+
+        .btn-premium {
+            padding: 12px 30px;
+            border-radius: 50px;
+            font-weight: 700;
+            transition: 0.3s;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+        }
+
+        .btn-glow { background: white; color: var(--primary-bg); border: none; }
+        .btn-glow:hover { transform: scale(1.05); box-shadow: 0 0 20px rgba(255,255,255,0.4); }
+
     </style>
 </head>
 <body>
 
     <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-light fixed-top shadow-sm">
+    <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
         <div class="container">
-            <a class="navbar-brand fw-bold text-primary" href="#">
-                <i class="bi bi-connectdevelop"></i> CampusConnect
+            <a class="navbar-brand fw-bold" href="#">
+                <i class="bi bi-connectdevelop me-2"></i>CampusConnect
             </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-collapse ms-auto mb-2 mb-lg-0 list-unstyled d-flex justify-content-end align-items-center gap-3">
-                    <li><a href="auth/login.php" class="btn btn-outline-primary px-4 fw-bold rounded-pill">Login</a></li>
-                    <li><a href="auth/register.php" class="btn btn-primary px-4 fw-bold rounded-pill shadow-sm">Join Now</a></li>
-                </ul>
+            <div class="ms-auto">
+                <a href="auth/login.php" class="btn btn-link text-white text-decoration-none fw-bold me-3">Login</a>
+                <a href="auth/register.php" class="btn btn-light rounded-pill px-4 fw-bold shadow-sm">Sign Up</a>
             </div>
         </div>
     </nav>
 
     <!-- Hero Section -->
-    <header class="hero-section">
-        <div class="container">
+    <div class="hero-wrapper">
+        <div class="container mt-5">
             <div class="row align-items-center">
-                <div class="col-lg-6">
-                    <h1 class="display-3 fw-bold mb-4">Connect. Collaborate. Succeed.</h1>
-                    <p class="lead mb-5 opacity-90">CampusConnect is the ultimate digital hub for students and teachers. Stay updated with campus life, manage academic resources, and grow together in a unified community.</p>
-                    <div class="d-flex gap-3">
-                        <a href="auth/register.php" class="btn btn-light btn-lg px-4 fw-bold text-primary rounded-pill">Get Started</a>
-                        <a href="#features" class="btn btn-outline-light btn-sm px-4 fw-bold rounded-pill d-flex align-items-center">Learn More</a>
+                <div class="col-lg-7 text-start">
+                    <h1 class="hero-title animate__animated animate__fadeInDown">Connect. <br>Collaborate. <br>Succeed.</h1>
+                    <p class="lead text-white opacity-75 mb-4 animate__animated animate__fadeInUp animate__delay-1s">
+                        The all-in-one digital platform for university students and teachers to bridge communication and academic management.
+                    </p>
+                    <div class="d-flex gap-3 animate__animated animate__fadeInUp animate__delay-1s">
+                        <a href="auth/register.php" class="btn btn-premium btn-glow">Join Community</a>
+                        <a href="#features" class="btn btn-premium btn-outline-light">Learn More</a>
                     </div>
                 </div>
-                <div class="col-lg-6 d-none d-lg-block text-center">
-                    <i class="bi bi-people-fill" style="font-size: 250px; opacity: 0.2;"></i>
+                <div class="col-lg-5 d-none d-lg-block text-center">
+                    <div class="floating-icon animate__animated animate__zoomIn animate__delay-1s">
+                        <i class="bi bi-rocket-takeoff-fill" style="font-size: 250px; color: rgba(255,255,255,0.15);"></i>
+                    </div>
                 </div>
             </div>
         </div>
-    </header>
+
+        <div class="wave-bottom">
+            <svg viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M0 120L1440 120V60C1440 60 1120 0 720 0C320 0 0 60 0 60V120Z" fill="white"/>
+            </svg>
+        </div>
+    </div>
 
     <!-- Features Section -->
-    <section id="features" class="py-5 mt-5">
+    <section id="features" class="features-section">
         <div class="container">
-            <div class="text-center mb-5">
-                <h2 class="fw-bold">Everything you need in one place</h2>
-                <p class="text-muted">Designed specifically for university academic and social needs.</p>
+            <div class="text-center mb-5 animate__animated animate__fadeIn">
+                <h6 class="text-primary fw-bold text-uppercase letter-spacing-1">Features</h6>
+                <h2 class="fw-bold display-5">What makes us special?</h2>
             </div>
+
             <div class="row g-4">
-                <!-- Feature 1 -->
-                <div class="col-md-4">
-                    <div class="card feature-card p-4 h-100 text-center">
-                        <div class="icon-box mx-auto"><i class="bi bi- megaphone-fill"></i></div>
+                <!-- Feed -->
+                <div class="col-md-4 animate__animated animate__fadeInUp">
+                    <div class="feature-card shadow-sm">
+                        <div class="icon-wrapper"><i class="bi bi-people-fill"></i></div>
                         <h4 class="fw-bold">Campus Feed</h4>
-                        <p class="text-muted">Share thoughts, ask questions, and stay updated with what's happening around you.</p>
+                        <p class="text-muted small">Stay connected with your peers. Share thoughts, like, and comment on real-time campus activities.</p>
                     </div>
                 </div>
-                <!-- Feature 2 -->
-                <div class="col-md-4">
-                    <div class="card feature-card p-4 h-100 text-center">
-                        <div class="icon-box mx-auto"><i class="bi bi-book-half"></i></div>
+                <!-- Academic Hub -->
+                <div class="col-md-4 animate__animated animate__fadeInUp animate__delay-1s">
+                    <div class="feature-card shadow-sm">
+                        <div class="icon-wrapper"><i class="bi bi-book-half"></i></div>
                         <h4 class="fw-bold">Academic Hub</h4>
-                        <p class="text-muted">Access class routines, study materials, and manage assignments without any hassle.</p>
+                        <p class="text-muted small">Access class routines, exam schedules, and course materials all in one dedicated section.</p>
                     </div>
                 </div>
-                <!-- Feature 3 -->
-                <div class="col-md-4">
-                    <div class="card feature-card p-4 h-100 text-center">
-                        <div class="icon-box mx-auto"><i class="bi bi-search"></i></div>
+                <!-- Lost & Found -->
+                <div class="col-md-4 animate__animated animate__fadeInUp animate__delay-2s">
+                    <div class="feature-card shadow-sm">
+                        <div class="icon-wrapper"><i class="bi bi-search"></i></div>
                         <h4 class="fw-bold">Lost & Found</h4>
-                        <p class="text-muted">Lost something? Found someone's ID? Our community-driven system helps items find their home.</p>
+                        <p class="text-muted small">Helping students recover lost items through a community-driven reporting system.</p>
+                    </div>
+                </div>
+                <!-- Assignments -->
+                <div class="col-md-4 animate__animated animate__fadeInUp">
+                    <div class="feature-card shadow-sm">
+                        <div class="icon-wrapper"><i class="bi bi-file-earmark-check-fill"></i></div>
+                        <h4 class="fw-bold">Assignment Portal</h4>
+                        <p class="text-muted small">Teachers can post tasks and students can submit their work securely with deadline tracking.</p>
+                    </div>
+                </div>
+                <!-- GPA Calc -->
+                <div class="col-md-4 animate__animated animate__fadeInUp animate__delay-1s">
+                    <div class="feature-card shadow-sm">
+                        <div class="icon-wrapper"><i class="bi bi-calculator-fill"></i></div>
+                        <h4 class="fw-bold">GPA Calculator</h4>
+                        <p class="text-muted small">Calculate and save your semester results with our advanced, subject-wise GPA tool.</p>
+                    </div>
+                </div>
+                <!-- Security -->
+                <div class="col-md-4 animate__animated animate__fadeInUp animate__delay-2s">
+                    <div class="feature-card shadow-sm">
+                        <div class="icon-wrapper"><i class="bi bi-shield-lock-fill"></i></div>
+                        <h4 class="fw-bold">Secure Access</h4>
+                        <p class="text-muted small">Integrated with Real-time Email OTP verification and role-based access for maximum security.</p>
                     </div>
                 </div>
             </div>
@@ -121,14 +228,13 @@
     </section>
 
     <!-- Footer -->
-    <footer class="bg-dark text-white py-5 mt-5">
+    <footer class="py-5 border-top">
         <div class="container text-center">
-            <h5 class="fw-bold mb-3">CampusConnect</h5>
-            <p class="small opacity-50 mb-0">&copy; 2026 CampusConnect Platform. All rights reserved.</p>
+            <h5 class="fw-bold text-primary mb-2">CampusConnect</h5>
+            <p class="text-muted small">&copy; 2026 CampusConnect Platform. Designed for Students & Teachers.</p>
         </div>
     </footer>
 
-    <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
