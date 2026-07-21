@@ -14,9 +14,20 @@ if(isset($_POST['verify'])){
     $result = mysqli_query($conn, "SELECT * FROM users WHERE email='$email' AND otp='$user_otp'");
     
     if(mysqli_num_rows($result) > 0){
+        $user_data = mysqli_fetch_assoc($result);
+
         mysqli_query($conn, "UPDATE users SET is_verified = 1, otp = NULL WHERE email='$email'");
-        unset($_SESSION['temp_email']);
-        echo "<script>alert('Account Verified Successfully!'); window.location='login.php';</script>";
+
+        if(isset($_SESSION['otp_purpose']) && $_SESSION['otp_purpose'] == 'reset'){
+            $_SESSION['reset_user_id'] = $user_data['id']; 
+            unset($_SESSION['otp_purpose']); 
+            header("Location: reset_password.php");
+            exit();
+        } else {
+            unset($_SESSION['temp_email']);
+            echo "<script>alert('Account Verified Successfully!'); window.location='login.php';</script>";
+            exit();
+        }
     } else {
         $error = "Invalid OTP code! Please check your email again.";
     }
@@ -28,7 +39,7 @@ if(isset($_POST['verify'])){
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Verify Account - CampusConnect</title>
+    <title>Verify OTP - CampusConnect</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <style>
@@ -101,7 +112,14 @@ if(isset($_POST['verify'])){
                     <i class="bi bi-shield-lock-fill"></i>
                 </div>
                 <h3 class="fw-bold text-dark">Verification</h3>
-                <p class="text-muted small">We've sent a 6-digit code to <br> <strong><?php echo $_SESSION['temp_email']; ?></strong></p>
+                <p class="text-muted small">
+                    <?php if(isset($_SESSION['otp_purpose']) && $_SESSION['otp_purpose'] == 'reset'): ?>
+                        Enter the reset code sent to your email <br>
+                    <?php else: ?>
+                        We've sent a 6-digit activation code to <br>
+                    <?php endif; ?>
+                    <strong><?php echo $_SESSION['temp_email']; ?></strong>
+                </p>
 
                 <?php if(isset($error)): ?>
                     <div class="alert alert-danger py-2 small mb-3"><?php echo $error; ?></div>
@@ -110,17 +128,17 @@ if(isset($_POST['verify'])){
                 <form method="POST">
                     <div class="mb-4">
                         <input type="text" name="otp" class="form-control otp-input" placeholder="000000" required maxlength="6" autocomplete="off">
-                        <div class="form-text mt-3">Enter the OTP from your email inbox.</div>
+                        <div class="form-text mt-3">Check your email inbox or spam folder.</div>
                     </div>
 
-                    <button name="verify" class="btn btn-primary btn-verify w-100 text-white shadow-sm mb-3">
-                        VERIFY & ACTIVATE
+                    <button name="verify" class="btn btn-primary btn-verify w-100 text-white shadow-sm mb-3 uppercase">
+                        <?php echo (isset($_SESSION['otp_purpose']) && $_SESSION['otp_purpose'] == 'reset') ? 'Verify to Reset' : 'Verify & Activate'; ?>
                     </button>
                 </form>
 
                 <div class="mt-2">
                     <p class="small text-muted">Didn't get the code? 
-                        <a href="register.php" class="text-decoration-none fw-bold" style="color: #764ba2;">Try Again</a>
+                        <a href="login.php" class="text-decoration-none fw-bold" style="color: #764ba2;">Try Again</a>
                     </p>
                 </div>
             </div>
