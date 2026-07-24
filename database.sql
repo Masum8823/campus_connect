@@ -253,3 +253,6 @@ ALTER TABLE notices
 ADD COLUMN image_path VARCHAR(255) NULL AFTER description,
 ADD COLUMN external_link TEXT NULL AFTER image_path;
 
+--DB for Post Edit or Delete
+
+ALTER TABLE posts ADD COLUMN is_edited TINYINT(1) DEFAULT 0 AFTER post_image;
