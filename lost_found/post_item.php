@@ -2,7 +2,6 @@
 include '../config.php';
 session_start();
 
-// 1. Check if user is authenticated
 if(!isset($_SESSION['user_id'])){
     header("Location: ../auth/login.php");
     exit();
@@ -12,44 +11,39 @@ if(isset($_POST['post_item'])){
     $user_id = $_SESSION['user_id'];
     $item_name = mysqli_real_escape_string($conn, $_POST['item_name']);
     $category = mysqli_real_escape_string($conn, $_POST['category']);
-    $location = mysqli_real_escape_string($conn, $_POST['location']); // New Location Field
+    $location = mysqli_real_escape_string($conn, $_POST['location']);
     $desc = mysqli_real_escape_string($conn, $_POST['description']);
     $status = $_POST['status'];
     $contact = mysqli_real_escape_string($conn, $_POST['contact']);
 
-    // Default image if not uploaded
     $db_image_path = "uploads/items/no_image.png";
 
-    // 2. Handle Image Upload logic
     if (!empty($_FILES['item_image']['name'])) {
         $file_name = time() . "_" . $_FILES['item_image']['name'];
         $target = "../uploads/items/" . $file_name;
         $db_image_path = "uploads/items/" . $file_name;
 
-        // Create folder if not exists
-        if (!file_exists('../uploads/items')) {
-            mkdir('../uploads/items', 0777, true);
-        }
+        if (!file_exists('../uploads/items')) { mkdir('../uploads/items', 0777, true); }
         move_uploaded_file($_FILES['item_image']['tmp_name'], $target);
     }
 
-    // 3. Insert into lost_found table
     $query = "INSERT INTO lost_found (user_id, item_name, category, location, description, item_status, item_image, contact_info) 
               VALUES ('$user_id', '$item_name', '$category', '$location', '$desc', '$status', '$db_image_path', '$contact')";
     
     if(mysqli_query($conn, $query)){
-        // 4. AUTO-ANNOUNCE: Create a post in the main campus feed automatically
         $status_text = ($status == 'lost') ? "LOST my " : "FOUND a ";
         $feed_content = "[L&F ANNOUNCEMENT] 📢 I have " . $status_text . $item_name . " at " . $location . ". Please check the Lost & Found section for details. \nContact: " . $contact;
         
-        mysqli_query($conn, "INSERT INTO posts (user_id, content) VALUES ('$user_id', '$feed_content')");
+        mysqli_query($conn, "INSERT INTO posts (user_id, content, post_image) VALUES ('$user_id', '$feed_content', '$db_image_path')");
 
-        echo "<script>alert('Item Posted & Announced on Campus Feed!'); window.location='index.php';</script>";
+        echo "<script>alert('Item Posted & Announced on Campus Feed with Image!'); window.location='index.php';</script>";
         exit();
     } else {
         echo "Error: " . mysqli_error($conn);
     }
 }
+?>
+
 ?>
 
 <!DOCTYPE html>
