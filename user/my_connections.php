@@ -101,6 +101,8 @@ $network = mysqli_query($conn, $query);
             <a href="../academic/index.php" class="nav-link"><i class="bi bi-mortarboard text-success"></i> <span>Academic Hub</span></a>
             <a href="requests.php" class="nav-link"><i class="bi bi-person-plus text-danger"></i> <span>Requests</span></a>
             <a href="my_connections.php" class="nav-link active"><i class="bi bi-people-fill text-primary"></i> <span>Network</span></a>
+            <a href="../alumni/index.php" class="nav-link"><i class="bi bi-award-fill text-dark"></i> <span>Alumni Hub</span></a>
+
         </nav>
     </div>
 

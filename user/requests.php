@@ -9,12 +9,10 @@ if(!isset($_SESSION['user_id'])){
 
 $current_user_id = $_SESSION['user_id'];
 
-// ইউজারের নিজের তথ্য আনা (সাইডবারের জন্য)
 $user_info_query = mysqli_query($conn, "SELECT * FROM users WHERE id='$current_user_id'");
 $user_res = mysqli_fetch_assoc($user_info_query);
 $my_pic = ($user_res['profile_pic'] != 'default.png') ? "../" . $user_res['profile_pic'] : "https://ui-avatars.com/api/?name=".urlencode($_SESSION['user_name'])."&background=random";
 
-// যারা রিকোয়েস্ট পাঠিয়েছে তাদের তথ্য আনা
 $query = "SELECT connections.id as conn_id, users.* FROM connections 
           JOIN users ON connections.sender_id = users.id 
           WHERE connections.receiver_id = '$current_user_id' AND connections.status = 'pending'";
@@ -98,6 +96,8 @@ $total_pending = mysqli_num_rows($requests);
             <a href="../academic/index.php" class="nav-link"><i class="bi bi-mortarboard text-success"></i> <span>Academic Hub</span></a>
             <a href="requests.php" class="nav-link active"><i class="bi bi-person-plus-fill text-danger"></i> <span>Requests</span></a>
             <a href="my_connections.php" class="nav-link"><i class="bi bi-people text-primary"></i> <span>Network</span></a>
+            <a href="../alumni/index.php" class="nav-link"><i class="bi bi-award-fill text-dark"></i> <span>Alumni Hub</span></a>
+
         </nav>
     </div>
 
