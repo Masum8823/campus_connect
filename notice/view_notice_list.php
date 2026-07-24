@@ -7,11 +7,9 @@ if(!isset($_SESSION['user_id'])){
     exit();
 }
 
-// সার্চ এবং সর্টিং লজিক
 $search = $_GET['search'] ?? '';
 $sort = $_GET['sort'] ?? 'desc';
 
-// SQL কুয়েরি (সার্চসহ)
 $sql = "SELECT notices.*, users.full_name FROM notices 
         JOIN users ON notices.user_id = users.id WHERE 1=1";
 

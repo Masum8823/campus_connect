@@ -252,3 +252,4 @@ CREATE TABLE IF NOT EXISTS alumni_qna (
 ALTER TABLE notices 
 ADD COLUMN image_path VARCHAR(255) NULL AFTER description,
 ADD COLUMN external_link TEXT NULL AFTER image_path;
+
