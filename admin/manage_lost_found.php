@@ -42,12 +42,14 @@ $all_items = mysqli_query($conn, "SELECT lost_found.*, users.full_name FROM lost
     <div class="sidebar">
         <h4 class="fw-bold text-center mb-4 text-primary">Admin Control</h4>
         <nav class="nav flex-column">
-            <a href="index.php" class="nav-link text-white"><i class="bi bi-speedometer2 me-2"></i> Dashboard</a>
-            <a href="manage_users.php" class="nav-link text-white"><i class="bi bi-people me-2"></i> Manage Users</a>
-            <a href="manage_content.php" class="nav-link text-white"><i class="bi bi-file-post me-2"></i> Feed Moderation</a>
-            <a href="manage_lost_found.php" class="nav-link active bg-primary text-white shadow-sm"><i class="bi bi-search me-2"></i> Lost & Found</a>
+            <a href="index.php" class="nav-link active"><i class="bi bi-speedometer2 me-2"></i> Dashboard</a>
+            <a href="manage_users.php" class="nav-link"><i class="bi bi-people me-2"></i> Manage Users</a>
+            <a href="manage_lost_found.php" class="nav-link text-white"><i class="bi bi-search me-2"></i> Lost & Found</a>
+            <a href="manage_academic.php" class="nav-link text-white"><i class="bi bi-mortarboard me-2"></i> Academic Resources</a>
+            <a href="manage_content.php" class="nav-link"><i class="bi bi-file-post me-2"></i> Content Moderation</a>
+            <a href="../user/dashboard.php" class="nav-link"><i class="bi bi-arrow-left-circle me-2"></i> User View</a>
             <hr>
-            <a href="../user/dashboard.php" class="nav-link text-white"><i class="bi bi-arrow-left-circle me-2"></i> User View</a>
+            <a href="../auth/logout.php" class="nav-link text-danger"><i class="bi bi-power me-2"></i> Logout</a>
         </nav>
     </div>
 
