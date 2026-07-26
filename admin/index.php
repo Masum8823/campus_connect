@@ -2,13 +2,11 @@
 include '../config.php';
 session_start();
 
-// সিকিউরিটি: শুধুমাত্র অ্যাডমিন ছাড়া কেউ এই ফোল্ডারে ঢুকতে পারবে না
 if(!isset($_SESSION['user_id']) || $_SESSION['role'] != 'admin'){
     header("Location: ../auth/login.php");
     exit();
 }
 
-// সিস্টেমের পরিসংখ্যান (Statistics) বের করা
 $total_users = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM users"))['total'];
 $total_posts = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM posts"))['total'];
 $total_notices = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM notices"))['total'];
@@ -39,6 +37,7 @@ $total_items = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total 
         <nav class="nav flex-column">
             <a href="index.php" class="nav-link active"><i class="bi bi-speedometer2 me-2"></i> Dashboard</a>
             <a href="manage_users.php" class="nav-link"><i class="bi bi-people me-2"></i> Manage Users</a>
+            <a href="manage_lost_found.php" class="nav-link text-white"><i class="bi bi-search me-2"></i> Lost & Found</a>
             <a href="manage_content.php" class="nav-link"><i class="bi bi-file-post me-2"></i> Content Moderation</a>
             <a href="../user/dashboard.php" class="nav-link"><i class="bi bi-arrow-left-circle me-2"></i> User View</a>
             <hr>
