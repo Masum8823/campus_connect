@@ -60,12 +60,16 @@ $all_posts = mysqli_query($conn, $posts_query);
         .nav-link i { font-size: 1.3rem; margin-right: 12px; }
         .main-content { margin-left: var(--sidebar-width); padding: 20px; }
         .feed-container { max-width: 680px; margin: 0 auto; }
-        .post-card { background: white; border-radius: 15px; border: none; box-shadow: 0 2px 12px rgba(0,0,0,0.08); margin-bottom: 20px; overflow: hidden; }
-        .post-input-box { background: #f0f2f5; border-radius: 25px; padding: 10px 20px; cursor: pointer; border: none; width: 100%; text-align: left; }
+        .post-card { background: white; border-radius: 12px; border: none; box-shadow: 0 2px 12px rgba(0,0,0,0.08); margin-bottom: 20px; overflow: hidden; }
+        .post-input-box { background: #f0f2f5; border-radius: 25px; padding: 10px 20px; cursor: pointer; border: none; width: 100%; text-align: left; color: #65676b; }
         .post-img-display { width: 100%; object-fit: cover; max-height: 500px; border-radius: 8px; margin-top: 10px; border: 1px solid #eee; }
         .nav-profile-img { width: 38px; height: 38px; object-fit: cover; border: 2px solid white; cursor: pointer; }
         .avatar-md { width: 45px; height: 45px; object-fit: cover; border-radius: 50%; }
         .dropdown-menu { border-radius: 12px; border: none; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        /* Admin button special style */
+        .nav-admin { background-color: #212529 !important; color: #ffc107 !important; border: 1px solid #333; }
+        .nav-admin:hover { background-color: #000 !important; transform: scale(1.02); }
+
         @media (max-width: 992px) { .sidebar { width: 85px; } .sidebar span, .sidebar h6, .sidebar p, .sidebar hr { display: none; } .main-content { margin-left: 85px; } }
     </style>
 </head>
@@ -81,6 +85,10 @@ $all_posts = mysqli_query($conn, $posts_query);
                     <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-3">
                         <div class="p-3 border-bottom"><h6 class="fw-bold mb-0 small"><?php echo $_SESSION['user_name']; ?></h6><small><?php echo $_SESSION['dept']; ?></small></div>
                         <li><a class="dropdown-item mt-2" href="profile.php"><i class="bi bi-person me-2"></i> Profile</a></li>
+                        <!-- Conditional Admin Panel Link in Dropdown -->
+                        <?php if($_SESSION['role'] == 'admin'): ?>
+                            <li><a class="dropdown-item text-warning fw-bold" href="../admin/index.php"><i class="bi bi-shield-lock me-2"></i> Admin Panel</a></li>
+                        <?php endif; ?>
                         <li><hr class="dropdown-divider"></li>
                         <li><a class="dropdown-item text-danger" href="../auth/logout.php"><i class="bi bi-box-arrow-right me-2"></i> Logout</a></li>
                     </ul>
@@ -98,6 +106,13 @@ $all_posts = mysqli_query($conn, $posts_query);
         </div>
         <hr>
         <nav class="nav flex-column">
+            <!-- Admin Panel Link - Only for Admin Role -->
+            <?php if($_SESSION['role'] == 'admin'): ?>
+                <a href="../admin/index.php" class="nav-link nav-admin shadow-sm mb-3">
+                    <i class="bi bi-shield-lock-fill text-warning"></i> <span>ADMIN CONTROL</span>
+                </a>
+            <?php endif; ?>
+
             <a href="dashboard.php" class="nav-link active"><i class="bi bi-house-door-fill"></i> <span>Campus Feed</span></a>
             <a href="../notice/view_notice_list.php" class="nav-link"><i class="bi bi-megaphone text-warning"></i> <span>Notices</span></a>
             <a href="../lost_found/index.php" class="nav-link"><i class="bi bi-search text-info"></i> <span>Lost & Found</span></a>
@@ -120,14 +135,21 @@ $all_posts = mysqli_query($conn, $posts_query);
                         What's on your mind, <?php echo explode(' ', $_SESSION['user_name'])[0]; ?>?
                     </button>
                 </div>
+                <div class="d-flex border-top pt-2 mt-2">
+                    <button class="btn btn-link text-decoration-none text-muted fw-bold btn-sm w-100" data-bs-toggle="modal" data-bs-target="#postModal">
+                        <i class="bi bi-image text-success me-1"></i> Add Photo to post
+                    </button>
+                </div>
             </div>
 
             <!-- Feed Loop -->
             <?php while($post = mysqli_fetch_assoc($all_posts)): 
                 $pid = $post['id'];
+                $like_res = mysqli_query($conn, "SELECT COUNT(*) as total FROM likes WHERE post_id='$pid'");
+                $total_likes = mysqli_fetch_assoc($like_res)['total'];
                 $is_liked = mysqli_num_rows(mysqli_query($conn, "SELECT * FROM likes WHERE post_id='$pid' AND user_id='$current_user_id'")) > 0;
-                $total_likes = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM likes WHERE post_id='$pid'"))['total'];
-                $total_comments = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM comments WHERE post_id='$pid'"))['total'];
+                $c_res = mysqli_query($conn, "SELECT COUNT(*) as total FROM comments WHERE post_id='$pid'");
+                $total_comments = mysqli_fetch_assoc($c_res)['total'];
             ?>
                 <div class="card post-card shadow-sm">
                     <div class="card-body p-3">
@@ -150,12 +172,13 @@ $all_posts = mysqli_query($conn, $posts_query);
                                 </div>
                             </div>
                             
-                            <!-- Post Action Dropdown (Delete/Edit) -->
-                            <?php if($post['user_id'] == $current_user_id): ?>
+                            <?php if($post['user_id'] == $current_user_id || $_SESSION['role'] == 'admin'): ?>
                                 <div class="dropdown">
                                     <i class="bi bi-three-dots text-muted" role="button" data-bs-toggle="dropdown"></i>
                                     <ul class="dropdown-menu dropdown-menu-end shadow-sm">
-                                        <li><a class="dropdown-item small" href="../post/edit_post.php?id=<?php echo $pid; ?>"><i class="bi bi-pencil me-2"></i> Edit Post</a></li>
+                                        <?php if($post['user_id'] == $current_user_id): ?>
+                                            <li><a class="dropdown-item small" href="../post/edit_post.php?id=<?php echo $pid; ?>"><i class="bi bi-pencil me-2"></i> Edit Post</a></li>
+                                        <?php endif; ?>
                                         <li><a class="dropdown-item small text-danger" href="../post/delete_post.php?id=<?php echo $pid; ?>" onclick="return confirm('Delete this post?')"><i class="bi bi-trash me-2"></i> Delete Post</a></li>
                                     </ul>
                                 </div>
@@ -165,15 +188,15 @@ $all_posts = mysqli_query($conn, $posts_query);
                         <p class="card-text px-1"><?php echo nl2br($post['content']); ?></p>
 
                         <?php if(!empty($post['post_image'])): ?>
-                            <div class="px-1"><img src="../<?php echo $post['post_image']; ?>" class="post-img-display shadow-sm"></div>
+                            <div class="px-1 text-center"><img src="../<?php echo $post['post_image']; ?>" class="post-img-display shadow-sm"></div>
                         <?php endif; ?>
                         
                         <div class="d-flex justify-content-around border-top border-bottom py-2 mt-3 mb-2">
                             <a href="toggle_like.php?post_id=<?php echo $pid; ?>" class="btn btn-link text-decoration-none fw-bold btn-sm <?php echo $is_liked ? 'text-primary' : 'text-muted'; ?>">
-                                <i class="bi <?php echo $is_liked ? 'bi-hand-thumbs-up-fill' : 'bi-hand-thumbs-up'; ?>"></i> <?php echo $total_likes; ?> Like
+                                <i class="bi <?php echo $is_liked ? 'bi-hand-thumbs-up-fill' : 'bi-hand-thumbs-up'; ?> me-1"></i> <?php echo $total_likes; ?> Like
                             </a>
                             <a href="../post/view_post.php?id=<?php echo $pid; ?>" class="btn btn-link text-decoration-none text-muted fw-bold btn-sm">
-                                <i class="bi bi-chat-left"></i> <?php echo $total_comments; ?> Comment
+                                <i class="bi bi-chat-left me-1"></i> <?php echo $total_comments; ?> Comment
                             </a>
                         </div>
                     </div>
@@ -182,7 +205,7 @@ $all_posts = mysqli_query($conn, $posts_query);
         </div>
     </div>
 
-    <!-- Create Post Modal -->
+    <!-- Post Modal -->
     <div class="modal fade" id="postModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content border-0 shadow-lg" style="border-radius: 15px;">
