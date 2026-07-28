@@ -46,11 +46,11 @@ $directory = mysqli_query($conn, "SELECT users.id, full_name, dept, current_job_
         .journey-card, .job-card { border-radius: 20px; border: none; box-shadow: 0 5px 20px rgba(0,0,0,0.05); transition: 0.3s; background: white; }
         .journey-card:hover, .job-card:hover { transform: translateY(-5px); }
         .search-box { border-radius: 50px; background: white; border: 1px solid #eee; padding: 12px 25px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-        .alumni-avatar { width: 60px; height: 60px; object-fit: cover; border-radius: 15px; border: 2px solid #eee; }
     </style>
 </head>
 <body>
 
+    <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top shadow-sm">
         <div class="container">
             <a class="navbar-brand fw-bold fs-4" href="../user/dashboard.php">CampusConnect Alumni</a>
@@ -58,10 +58,10 @@ $directory = mysqli_query($conn, "SELECT users.id, full_name, dept, current_job_
                 <a href="../user/dashboard.php" class="btn btn-light btn-sm fw-bold rounded-pill px-3 me-2">Dashboard</a>
                 <?php if($user_role == 'alumni' || $user_role == 'admin'): ?>
                     <div class="dropdown">
-                        <button class="btn btn-warning btn-sm fw-bold rounded-pill dropdown-toggle" data-bs-toggle="dropdown">+ Post</button>
+                        <button class="btn btn-warning btn-sm fw-bold rounded-pill dropdown-toggle shadow-sm text-dark" data-bs-toggle="dropdown">+ Post</button>
                         <ul class="dropdown-menu dropdown-menu-end shadow border-0">
-                            <li><a class="dropdown-item" href="share_journey.php">Share Journey</a></li>
-                            <li><a class="dropdown-item" href="post_job.php">Post Job/Internship</a></li>
+                            <li><a class="dropdown-item small" href="share_journey.php">Share Journey</a></li>
+                            <li><a class="dropdown-item small" href="post_job.php">Post Job/Internship</a></li>
                         </ul>
                     </div>
                 <?php endif; ?>
@@ -70,7 +70,7 @@ $directory = mysqli_query($conn, "SELECT users.id, full_name, dept, current_job_
     </nav>
 
     <div class="container mt-4">
-        <!-- Section Selector (Tabs) -->
+        <!-- Tab Navigation -->
         <div class="row justify-content-center mb-5">
             <div class="col-md-9">
                 <ul class="nav nav-pills nav-fill hub-nav">
@@ -87,19 +87,20 @@ $directory = mysqli_query($conn, "SELECT users.id, full_name, dept, current_job_
             </div>
         </div>
 
-        <!-- Render based on View -->
+        <!-- Render Content -->
         <?php if($view == 'stories'): ?>
             <div class="row justify-content-center">
-                <div class="col-md-7 mb-4">
-                    <form method="GET" action="">
+                <div class="col-md-7 mb-4 text-center">
+                    <form method="GET" action="" class="w-100">
                         <input type="hidden" name="view" value="stories">
-                        <input type="text" name="search" class="form-control search-box" placeholder="Search by Job, Company or Name..." value="<?php echo htmlspecialchars($search); ?>">
+                        <input type="text" name="search" class="form-control search-box" placeholder="Search by Job, Company or Alumni Name..." value="<?php echo htmlspecialchars($search); ?>">
                     </form>
                 </div>
                 <div class="col-md-9 col-lg-8">
                     <?php while($row = mysqli_fetch_assoc($stories)): 
                         $sid = $row['id'];
                         $is_inspired = mysqli_num_rows(mysqli_query($conn, "SELECT * FROM alumni_inspired WHERE story_id='$sid' AND user_id='$current_user_id'")) > 0;
+                        $total_inspired = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM alumni_inspired WHERE story_id='$sid'"))['total'];
                     ?>
                         <div class="card journey-card mb-4 shadow-sm">
                             <div class="card-body p-4 p-lg-5">
@@ -114,9 +115,9 @@ $directory = mysqli_query($conn, "SELECT users.id, full_name, dept, current_job_
                                 <p class="text-secondary mb-4" style="line-height: 1.7;"><?php echo nl2br(substr($row['journey_story'], 0, 300)); ?>...</p>
                                 <div class="d-flex justify-content-between align-items-center pt-3 border-top">
                                     <a href="toggle_inspire.php?id=<?php echo $sid; ?>" class="btn btn-sm <?php echo $is_inspired ? 'btn-danger' : 'btn-outline-danger'; ?> rounded-pill px-3">
-                                        <i class="bi <?php echo $is_inspired ? 'bi-heart-fill' : 'bi-heart'; ?> me-1"></i> Inspired
+                                        <i class="bi <?php echo $is_inspired ? 'bi-heart-fill' : 'bi-heart'; ?> me-1"></i> Inspired (<?php echo $total_inspired; ?>)
                                     </a>
-                                    <a href="view_journey.php?id=<?php echo $sid; ?>" class="btn btn-outline-primary btn-sm rounded-pill px-4 fw-bold shadow-sm">Read Full Roadmap →</a>
+                                    <a href="view_journey.php?id=<?php echo $sid; ?>" class="btn btn-outline-primary btn-sm rounded-pill px-4 fw-bold">Read Full Journey →</a>
                                 </div>
                             </div>
                         </div>
@@ -125,22 +126,33 @@ $directory = mysqli_query($conn, "SELECT users.id, full_name, dept, current_job_
             </div>
 
         <?php elseif($view == 'jobs'): ?>
-            <!-- Job Board Content -->
             <div class="row justify-content-center">
                 <div class="col-md-9">
-                    <h4 class="fw-bold mb-4">Career Opportunities</h4>
+                    <h4 class="fw-bold mb-4 px-2">Career Opportunities</h4>
                     <div class="row">
                         <?php if(mysqli_num_rows($jobs) > 0): ?>
                             <?php while($job = mysqli_fetch_assoc($jobs)): ?>
                                 <div class="col-md-6 mb-4">
                                     <div class="card job-card p-4 h-100 d-flex flex-column">
-                                        <span class="badge bg-primary-subtle text-primary mb-2 align-self-start rounded-pill px-3"><?php echo $job['job_type']; ?></span>
+                                        <div class="d-flex justify-content-between">
+                                            <span class="badge bg-primary-subtle text-primary mb-2 rounded-pill px-3"><?php echo $job['job_type']; ?></span>
+                                            
+                                            <!-- Action Buttons for Owner -->
+                                            <?php if($job['alumni_id'] == $current_user_id): ?>
+                                                <div class="btn-group">
+                                                    <a href="edit_job.php?id=<?php echo $job['id']; ?>" class="btn btn-sm btn-light border-0 text-secondary" title="Edit"><i class="bi bi-pencil-square"></i></a>
+                                                    <a href="delete_job.php?id=<?php echo $job['id']; ?>" class="btn btn-sm btn-light border-0 text-danger" title="Delete" onclick="return confirm('Delete this job post?')"><i class="bi bi-trash"></i></a>
+                                                </div>
+                                            <?php endif; ?>
+                                        </div>
+
                                         <h5 class="fw-bold text-dark mb-1"><?php echo $job['job_title']; ?></h5>
-                                        <p class="text-muted small fw-bold mb-3"><i class="bi bi-building"></i> <?php echo $job['company']; ?></p>
+                                        <p class="text-muted small fw-bold mb-3"><i class="bi bi-building"></i> <?php echo $job['company']; ?> • <i class="bi bi-geo-alt"></i> <?php echo $job['location']; ?></p>
                                         <p class="small text-secondary mb-4"><?php echo nl2br(substr($job['description'], 0, 120)); ?>...</p>
+                                        
                                         <div class="mt-auto d-flex justify-content-between align-items-center">
                                             <small class="text-muted">By: <?php echo $job['full_name']; ?></small>
-                                            <a href="<?php echo $job['apply_link']; ?>" target="_blank" class="btn btn-primary btn-sm rounded-pill px-4 shadow-sm">Apply</a>
+                                            <a href="<?php echo $job['apply_link']; ?>" target="_blank" class="btn btn-primary btn-sm rounded-pill px-4 shadow-sm">Apply Now</a>
                                         </div>
                                     </div>
                                 </div>
@@ -153,7 +165,6 @@ $directory = mysqli_query($conn, "SELECT users.id, full_name, dept, current_job_
             </div>
 
         <?php elseif($view == 'directory'): ?>
-            <!-- Alumni Directory Content -->
             <div class="row justify-content-center">
                 <div class="col-md-10">
                     <h4 class="fw-bold mb-4">Alumni Directory</h4>
@@ -162,7 +173,7 @@ $directory = mysqli_query($conn, "SELECT users.id, full_name, dept, current_job_
                             <div class="col-6 col-md-3">
                                 <div class="card border-0 shadow-sm rounded-4 text-center p-3 h-100">
                                     <?php $img = ($dir['profile_pic'] != 'default.png') ? "../" . $dir['profile_pic'] : "https://ui-avatars.com/api/?name=".urlencode($dir['full_name'])."&background=random"; ?>
-                                    <img src="<?php echo $img; ?>" class="rounded-circle mx-auto mb-2" width="60" height="60" style="object-fit: cover;">
+                                    <a href="../user/profile.php?id=<?php echo $dir['id']; ?>"><img src="<?php echo $img; ?>" class="rounded-circle mx-auto mb-2 shadow-sm" width="65" height="65" style="object-fit: cover;"></a>
                                     <h6 class="fw-bold text-dark mb-1 small"><?php echo $dir['full_name']; ?></h6>
                                     <p class="text-primary mb-0" style="font-size: 10px; font-weight: 700;"><?php echo $dir['company_name']; ?></p>
                                     <small class="text-muted" style="font-size: 10px;"><?php echo $dir['dept']; ?> Dept.</small>
