@@ -10,11 +10,9 @@ if(!isset($_SESSION['user_id'])){
 $current_user_id = $_SESSION['user_id'];
 $user_role = $_SESSION['role'];
 
-// ভিউ মুড সিলেক্ট করা
 $view = $_GET['view'] ?? 'stories';
 $search = $_GET['search'] ?? '';
 
-// --- ১. সাকসেস স্টোরি কুয়েরি ---
 $stories_sql = "SELECT alumni_stories.*, users.full_name, users.profile_pic, users.dept FROM alumni_stories JOIN users ON alumni_stories.user_id = users.id WHERE 1=1";
 if($view == 'stories' && $search){
     $safe_search = mysqli_real_escape_string($conn, $search);
@@ -24,19 +22,27 @@ if($view == 'stories' && $search){
 }
 $stories = mysqli_query($conn, $stories_sql . " ORDER BY created_at DESC");
 
-// --- ২. জব বোর্ড কুয়েরি (Updated with Search Logic) ---
 $jobs_sql = "SELECT alumni_jobs.*, users.full_name FROM alumni_jobs JOIN users ON alumni_jobs.alumni_id = users.id WHERE 1=1";
 if($view == 'jobs' && $search){
     $safe_search = mysqli_real_escape_string($conn, $search);
-    // জব টাইটেল, কোম্পানি বা পাবলিশারের নাম দিয়ে সার্চ লজিক
     $jobs_sql .= " AND (alumni_jobs.job_title LIKE '%$safe_search%' 
                      OR alumni_jobs.company LIKE '%$safe_search%' 
+                     OR alumni_jobs.target_dept LIKE '%$safe_search%' 
                      OR users.full_name LIKE '%$safe_search%')";
 }
 $jobs = mysqli_query($conn, $jobs_sql . " ORDER BY created_at DESC");
 
-// --- ৩. ডিরেক্টরি কুয়েরি ---
 $directory = mysqli_query($conn, "SELECT users.id, full_name, dept, current_job_title, company_name, profile_pic FROM alumni_stories JOIN users ON alumni_stories.user_id = users.id GROUP BY users.id");
+
+function getCategoryIcon($category) {
+    switch ($category) {
+        case 'Electronics': return 'bi-laptop';
+        case 'Documents': return 'bi-file-earmark-medical';
+        case 'Personal Items': return 'bi-person-badge';
+        case 'Wallets/Bags': return 'bi-wallet2';
+        default: return 'bi-box-seam';
+    }
+}
 ?>
 
 <!DOCTYPE html>
@@ -91,14 +97,14 @@ $directory = mysqli_query($conn, "SELECT users.id, full_name, dept, current_job_
             </div>
         </div>
 
-        <!-- SEARCH BAR (Visible for both Stories and Jobs) -->
+        <!-- SEARCH BAR -->
         <?php if($view != 'directory'): ?>
         <div class="row justify-content-center mb-5">
             <div class="col-md-7">
                 <form method="GET" action="">
                     <input type="hidden" name="view" value="<?php echo $view; ?>">
                     <div class="input-group">
-                        <input type="text" name="search" class="form-control search-box" placeholder="Search by name, company, or title..." value="<?php echo htmlspecialchars($search); ?>">
+                        <input type="text" name="search" class="form-control search-box" placeholder="Search by name, company, title or department..." value="<?php echo htmlspecialchars($search); ?>">
                         <button class="btn btn-primary rounded-pill px-4 ms-2 shadow-sm fw-bold" type="submit">Search</button>
                     </div>
                 </form>
@@ -115,7 +121,7 @@ $directory = mysqli_query($conn, "SELECT users.id, full_name, dept, current_job_
                         $is_inspired = mysqli_num_rows(mysqli_query($conn, "SELECT * FROM alumni_inspired WHERE story_id='$sid' AND user_id='$current_user_id'")) > 0;
                         $total_inspired = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM alumni_inspired WHERE story_id='$sid'"))['total'];
                     ?>
-                        <div class="card journey-card mb-4">
+                        <div class="card journey-card mb-4 shadow-sm">
                             <div class="card-body p-4 p-lg-5">
                                 <div class="d-flex align-items-center mb-4">
                                     <?php $img = ($row['profile_pic'] != 'default.png') ? "../" . $row['profile_pic'] : "https://ui-avatars.com/api/?name=".urlencode($row['full_name'])."&background=random"; ?>
@@ -133,7 +139,7 @@ $directory = mysqli_query($conn, "SELECT users.id, full_name, dept, current_job_
                 </div>
             </div>
 
-        <!-- JOB BOARD SECTION -->
+        <!-- JOB BOARD SECTION (Updated with Vacancy and Target Dept) -->
         <?php elseif($view == 'jobs'): ?>
             <div class="row justify-content-center">
                 <div class="col-md-10">
@@ -141,21 +147,30 @@ $directory = mysqli_query($conn, "SELECT users.id, full_name, dept, current_job_
                         <?php if(mysqli_num_rows($jobs) > 0): ?>
                             <?php while($job = mysqli_fetch_assoc($jobs)): ?>
                                 <div class="col-md-6 mb-4">
-                                    <div class="card job-card p-4 d-flex flex-column">
-                                        <div class="d-flex justify-content-between align-items-start">
-                                            <span class="badge bg-primary-subtle text-primary mb-3 rounded-pill px-3"><?php echo $job['job_type']; ?></span>
-                                            <?php if($job['alumni_id'] == $current_user_id): ?>
-                                                <div class="btn-group">
-                                                    <a href="edit_job.php?id=<?php echo $job['id']; ?>" class="btn btn-sm btn-light border-0 text-secondary"><i class="bi bi-pencil-square"></i></a>
-                                                    <a href="delete_job.php?id=<?php echo $job['id']; ?>" class="btn btn-sm btn-light border-0 text-danger" onclick="return confirm('Delete this job?')"><i class="bi bi-trash"></i></a>
-                                                </div>
-                                            <?php endif; ?>
+                                    <div class="card job-card p-4 d-flex flex-column shadow-sm">
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <span class="badge bg-primary-subtle text-primary rounded-pill px-3 small"><?php echo $job['job_type']; ?></span>
+                                            <span class="text-danger fw-bold small"><i class="bi bi-people-fill"></i> Vacancy: <?php echo $job['vacancy']; ?></span>
                                         </div>
+
                                         <h5 class="fw-bold text-dark mb-1"><?php echo $job['job_title']; ?></h5>
-                                        <p class="text-muted small fw-bold mb-3"><i class="bi bi-building"></i> <?php echo $job['company']; ?></p>
+                                        <p class="text-muted small fw-bold mb-2">
+                                            <i class="bi bi-building"></i> <?php echo $job['company']; ?> • 
+                                            <i class="bi bi-mortarboard-fill"></i> For: <?php echo $job['target_dept']; ?>
+                                        </p>
+                                        
                                         <p class="small text-secondary mb-4"><?php echo nl2br(substr($job['description'], 0, 150)); ?>...</p>
+                                        
                                         <div class="mt-auto d-flex justify-content-between align-items-center pt-3 border-top">
-                                            <small class="text-muted">By: <strong><?php echo $job['full_name']; ?></strong></small>
+                                            <div class="d-flex align-items-center">
+                                                <small class="text-muted">By: <strong><?php echo explode(' ', $job['full_name'])[0]; ?></strong></small>
+                                                <?php if($job['alumni_id'] == $current_user_id): ?>
+                                                    <div class="btn-group ms-2">
+                                                        <a href="edit_job.php?id=<?php echo $job['id']; ?>" class="btn btn-sm text-secondary p-0 px-1"><i class="bi bi-pencil-square"></i></a>
+                                                        <a href="delete_job.php?id=<?php echo $job['id']; ?>" class="btn btn-sm text-danger p-0 px-1" onclick="return confirm('Delete?')"><i class="bi bi-trash"></i></a>
+                                                    </div>
+                                                <?php endif; ?>
+                                            </div>
                                             <a href="<?php echo $job['apply_link']; ?>" target="_blank" class="btn btn-primary btn-sm rounded-pill px-4 shadow-sm">Apply</a>
                                         </div>
                                     </div>
