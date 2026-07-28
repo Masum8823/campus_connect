@@ -18,7 +18,10 @@ $sql = "SELECT lost_found.*, users.full_name, users.profile_pic FROM lost_found
 
 if($search) {
     $safe_search = mysqli_real_escape_string($conn, $search);
-    $sql .= " AND (item_name LIKE '%$safe_search%' OR category LIKE '%$safe_search%' OR location LIKE '%$safe_search%')";
+    $sql .= " AND (lost_found.item_name LIKE '%$safe_search%' 
+                OR lost_found.category LIKE '%$safe_search%' 
+                OR lost_found.location LIKE '%$safe_search%' 
+                OR users.full_name LIKE '%$safe_search%')";
 }
 
 if($status_filter == 'lost') $sql .= " AND item_status = 'lost' AND is_resolved = 0";
@@ -26,6 +29,7 @@ elseif($status_filter == 'found') $sql .= " AND item_status = 'found' AND is_res
 elseif($status_filter == 'resolved') $sql .= " AND is_resolved = 1";
 
 $sql .= " ORDER BY created_at " . ($sort == 'asc' ? 'ASC' : 'DESC');
+
 $items = mysqli_query($conn, $sql);
 
 function getCategoryIcon($category) {
@@ -55,7 +59,7 @@ function getCategoryIcon($category) {
         .sidebar-filter { border-radius: 20px; border: none; background: white; box-shadow: var(--card-shadow); padding: 25px; }
         .filter-title { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.2px; color: #adb5bd; margin-bottom: 20px; display: block; }
         
-        .filter-link { border-radius: 12px; margin-bottom: 6px; font-size: 14px; font-weight: 500; transition: 0.2s; border: none; padding: 12px 15px; color: #4b4f56; }
+        .filter-link { border-radius: 12px; margin-bottom: 6px; font-size: 14px; font-weight: 500; transition: 0.2s; border: none; padding: 10px 15px; color: #4b4f56; }
         .filter-link:hover { background-color: #f8f9fa; color: var(--primary-color); transform: translateX(5px); }
         .filter-link.active { background-color: #e7f3ff; color: var(--primary-color); }
 
@@ -82,6 +86,7 @@ function getCategoryIcon($category) {
 </head>
 <body>
 
+    <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm fixed-top">
         <div class="container">
             <a class="navbar-brand fw-bold fs-4" href="../user/dashboard.php">
@@ -98,20 +103,21 @@ function getCategoryIcon($category) {
 
     <div class="container mt-4">
         <div class="row">
+            <!-- Sidebar -->
             <div class="col-md-4 col-lg-3 mb-4">
                 <div class="sidebar-filter sticky-top" style="top: 100px;">
                     <span class="filter-title">Search & Filter</span>
                     <form method="GET">
                         <div class="search-wrapper">
                             <i class="bi bi-search"></i>
-                            <input type="text" name="search" class="form-control premium-input" placeholder="Find items..." value="<?php echo $search; ?>">
+                            <input type="text" name="search" class="form-control premium-input" placeholder="Search item or publisher..." value="<?php echo htmlspecialchars($search); ?>">
                         </div>
 
                         <div class="list-group list-group-flush mb-4">
-                            <a href="?status=&search=<?php echo $search; ?>" class="list-group-item list-group-item-action filter-link <?php echo $status_filter == '' ? 'active' : ''; ?>">All Reports</a>
-                            <a href="?status=lost&search=<?php echo $search; ?>" class="list-group-item list-group-item-action filter-link <?php echo $status_filter == 'lost' ? 'active' : ''; ?>">Lost Items</a>
-                            <a href="?status=found&search=<?php echo $search; ?>" class="list-group-item list-group-item-action filter-link <?php echo $status_filter == 'found' ? 'active' : ''; ?>">Found Items</a>
-                            <a href="?status=resolved&search=<?php echo $search; ?>" class="list-group-item list-group-item-action filter-link <?php echo $status_filter == 'resolved' ? 'active' : ''; ?>">Solved Cases</a>
+                            <a href="?status=&search=<?php echo urlencode($search); ?>&sort=<?php echo $sort; ?>" class="list-group-item list-group-item-action filter-link <?php echo $status_filter == '' ? 'active' : ''; ?>">All Reports</a>
+                            <a href="?status=lost&search=<?php echo urlencode($search); ?>&sort=<?php echo $sort; ?>" class="list-group-item list-group-item-action filter-link <?php echo $status_filter == 'lost' ? 'active' : ''; ?>">Lost Items</a>
+                            <a href="?status=found&search=<?php echo urlencode($search); ?>&sort=<?php echo $sort; ?>" class="list-group-item list-group-item-action filter-link <?php echo $status_filter == 'found' ? 'active' : ''; ?>">Found Items</a>
+                            <a href="?status=resolved&search=<?php echo urlencode($search); ?>&sort=<?php echo $sort; ?>" class="list-group-item list-group-item-action filter-link <?php echo $status_filter == 'resolved' ? 'active' : ''; ?>">Solved Cases</a>
                         </div>
 
                         <label class="small fw-bold text-muted mb-2 ps-1">Sort by Date</label>
@@ -125,6 +131,7 @@ function getCategoryIcon($category) {
                 </div>
             </div>
 
+            <!-- Content Area -->
             <div class="col-md-8 col-lg-9">
                 <div class="row">
                     <?php if(mysqli_num_rows($items) > 0): ?>
@@ -171,7 +178,7 @@ function getCategoryIcon($category) {
                                             <?php echo nl2br(substr($row['description'], 0, 70)); ?>...
                                         </p>
 
-                                        <!-- NEW: Publisher Name Section -->
+                                        <!-- Publisher Info -->
                                         <div class="publisher-info">
                                             <?php $p_pic = ($row['profile_pic'] != 'default.png') ? "../" . $row['profile_pic'] : "https://ui-avatars.com/api/?name=".urlencode($row['full_name']); ?>
                                             <img src="<?php echo $p_pic; ?>" class="publisher-img-sm me-2 shadow-sm">
@@ -197,9 +204,10 @@ function getCategoryIcon($category) {
                             </div>
                         <?php endwhile; ?>
                     <?php else: ?>
-                        <div class="col-12 text-center py-5 bg-white rounded-4 shadow-sm">
+                        <div class="col-12 text-center py-5 bg-white rounded-4 shadow-sm border">
                             <i class="bi bi-search display-1 text-muted opacity-25"></i>
                             <h5 class="mt-3 text-muted fw-bold">No results found</h5>
+                            <p class="text-muted small">Try searching by item name or publisher name.</p>
                         </div>
                     <?php endif; ?>
                 </div>
