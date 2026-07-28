@@ -52,7 +52,6 @@ function getCategoryIcon($category) {
         :root { --primary-color: #0d6efd; --bg-light: #f0f2f5; --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.05); }
         body { background-color: var(--bg-light); font-family: 'Plus Jakarta Sans', sans-serif; padding-top: 80px; }
 
-        /* Sidebar Styling */
         .sidebar-filter { border-radius: 20px; border: none; background: white; box-shadow: var(--card-shadow); padding: 25px; }
         .filter-title { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.2px; color: #adb5bd; margin-bottom: 20px; display: block; }
         
@@ -60,8 +59,7 @@ function getCategoryIcon($category) {
         .filter-link:hover { background-color: #f8f9fa; color: var(--primary-color); transform: translateX(5px); }
         .filter-link.active { background-color: #e7f3ff; color: var(--primary-color); }
 
-        /* Item Card Premium */
-        .item-card { border-radius: 22px; border: none; background: white; transition: all 0.3s ease; box-shadow: var(--card-shadow); overflow: hidden; height: 100%; }
+        .item-card { border-radius: 22px; border: none; background: white; transition: all 0.3s ease; box-shadow: var(--card-shadow); overflow: hidden; height: 100%; display: flex; flex-direction: column; }
         .item-card:hover { transform: translateY(-8px); box-shadow: 0 15px 35px rgba(0,0,0,0.1); }
         
         .img-container { height: 200px; overflow: hidden; position: relative; background: #eee; }
@@ -74,6 +72,9 @@ function getCategoryIcon($category) {
         .location-tag { font-size: 11px; font-weight: 700; color: #d85140; background: #fff1f0; padding: 5px 12px; border-radius: 8px; display: inline-flex; align-items: center; gap: 5px; }
         .category-icon { width: 35px; height: 35px; background: #f0f7ff; color: var(--primary-color); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
 
+        .publisher-info { background: #f8f9fa; border-radius: 12px; padding: 8px 12px; display: flex; align-items: center; margin-bottom: 15px; }
+        .publisher-img-sm { width: 24px; height: 24px; object-fit: cover; border-radius: 50%; border: 1px solid #ddd; }
+
         .search-wrapper { position: relative; margin-bottom: 20px; }
         .search-wrapper i { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #adb5bd; }
         .premium-input { border-radius: 12px; background: #f8f9fa; border: 1px solid #eee; padding: 12px 12px 12px 45px; font-size: 14px; }
@@ -81,7 +82,6 @@ function getCategoryIcon($category) {
 </head>
 <body>
 
-    <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm fixed-top">
         <div class="container">
             <a class="navbar-brand fw-bold fs-4" href="../user/dashboard.php">
@@ -98,7 +98,6 @@ function getCategoryIcon($category) {
 
     <div class="container mt-4">
         <div class="row">
-            <!-- Sidebar -->
             <div class="col-md-4 col-lg-3 mb-4">
                 <div class="sidebar-filter sticky-top" style="top: 100px;">
                     <span class="filter-title">Search & Filter</span>
@@ -109,18 +108,10 @@ function getCategoryIcon($category) {
                         </div>
 
                         <div class="list-group list-group-flush mb-4">
-                            <a href="?status=&search=<?php echo $search; ?>" class="list-group-item list-group-item-action filter-link <?php echo $status_filter == '' ? 'active' : ''; ?>">
-                                <i class="bi bi-collection-fill me-2"></i> All Reports
-                            </a>
-                            <a href="?status=lost&search=<?php echo $search; ?>" class="list-group-item list-group-item-action filter-link <?php echo $status_filter == 'lost' ? 'active' : ''; ?>">
-                                <i class="bi bi-patch-question-fill me-2 text-danger"></i> Lost Items
-                            </a>
-                            <a href="?status=found&search=<?php echo $search; ?>" class="list-group-item list-group-item-action filter-link <?php echo $status_filter == 'found' ? 'active' : ''; ?>">
-                                <i class="bi bi-patch-check-fill me-2 text-success"></i> Found Items
-                            </a>
-                            <a href="?status=resolved&search=<?php echo $search; ?>" class="list-group-item list-group-item-action filter-link <?php echo $status_filter == 'resolved' ? 'active' : ''; ?>">
-                                <i class="bi bi-shield-fill-check me-2 text-primary"></i> Solved Cases
-                            </a>
+                            <a href="?status=&search=<?php echo $search; ?>" class="list-group-item list-group-item-action filter-link <?php echo $status_filter == '' ? 'active' : ''; ?>">All Reports</a>
+                            <a href="?status=lost&search=<?php echo $search; ?>" class="list-group-item list-group-item-action filter-link <?php echo $status_filter == 'lost' ? 'active' : ''; ?>">Lost Items</a>
+                            <a href="?status=found&search=<?php echo $search; ?>" class="list-group-item list-group-item-action filter-link <?php echo $status_filter == 'found' ? 'active' : ''; ?>">Found Items</a>
+                            <a href="?status=resolved&search=<?php echo $search; ?>" class="list-group-item list-group-item-action filter-link <?php echo $status_filter == 'resolved' ? 'active' : ''; ?>">Solved Cases</a>
                         </div>
 
                         <label class="small fw-bold text-muted mb-2 ps-1">Sort by Date</label>
@@ -134,7 +125,6 @@ function getCategoryIcon($category) {
                 </div>
             </div>
 
-            <!-- Content Area -->
             <div class="col-md-8 col-lg-9">
                 <div class="row">
                     <?php if(mysqli_num_rows($items) > 0): ?>
@@ -142,7 +132,6 @@ function getCategoryIcon($category) {
                             <div class="col-lg-4 col-md-6 mb-4">
                                 <div class="card item-card">
                                     <div class="img-container">
-                                        <!-- Status Badge -->
                                         <span class="status-badge <?php echo $row['item_status'] == 'lost' ? 'bg-danger' : 'bg-primary'; ?> text-white">
                                             <?php echo $row['item_status']; ?>
                                         </span>
@@ -178,9 +167,16 @@ function getCategoryIcon($category) {
                                             <?php echo $row['item_name']; ?>
                                         </h6>
 
-                                        <p class="text-secondary small mb-4" style="height: 40px; overflow: hidden; line-height: 1.5;">
+                                        <p class="text-secondary small mb-3" style="height: 40px; overflow: hidden; line-height: 1.5;">
                                             <?php echo nl2br(substr($row['description'], 0, 70)); ?>...
                                         </p>
+
+                                        <!-- NEW: Publisher Name Section -->
+                                        <div class="publisher-info">
+                                            <?php $p_pic = ($row['profile_pic'] != 'default.png') ? "../" . $row['profile_pic'] : "https://ui-avatars.com/api/?name=".urlencode($row['full_name']); ?>
+                                            <img src="<?php echo $p_pic; ?>" class="publisher-img-sm me-2 shadow-sm">
+                                            <small class="text-dark fw-bold" style="font-size: 11px;"><?php echo $row['full_name']; ?></small>
+                                        </div>
 
                                         <div class="d-flex justify-content-between align-items-center pt-3 border-top">
                                             <div class="d-flex align-items-center">
@@ -204,7 +200,6 @@ function getCategoryIcon($category) {
                         <div class="col-12 text-center py-5 bg-white rounded-4 shadow-sm">
                             <i class="bi bi-search display-1 text-muted opacity-25"></i>
                             <h5 class="mt-3 text-muted fw-bold">No results found</h5>
-                            <p class="text-muted small">Try different keywords or status filters.</p>
                         </div>
                     <?php endif; ?>
                 </div>
