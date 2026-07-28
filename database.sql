@@ -256,3 +256,18 @@ ADD COLUMN external_link TEXT NULL AFTER image_path;
 --DB for Post Edit or Delete
 
 ALTER TABLE posts ADD COLUMN is_edited TINYINT(1) DEFAULT 0 AFTER post_image;
+
+--Db for Alumni Hub's Premium Index
+
+CREATE TABLE IF NOT EXISTS alumni_jobs (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    alumni_id INT,
+    job_title VARCHAR(255),
+    company VARCHAR(255),
+    location VARCHAR(255),
+    job_type ENUM('Full-time', 'Internship', 'Part-time', 'Contract'),
+    description TEXT,
+    apply_link TEXT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (alumni_id) REFERENCES users(id) ON DELETE CASCADE
+);

@@ -13,13 +13,11 @@ $search = $_GET['search'] ?? '';
 $status_filter = $_GET['status'] ?? ''; 
 $sort = $_GET['sort'] ?? 'desc';
 
-// ৩. ডাইনামিক SQL কুয়েরি (পাবলিশারের নাম সার্চ লজিকসহ)
 $sql = "SELECT lost_found.*, users.full_name, users.profile_pic FROM lost_found 
         JOIN users ON lost_found.user_id = users.id WHERE 1=1";
 
 if($search) {
     $safe_search = mysqli_real_escape_string($conn, $search);
-    // আইটেম নাম, ক্যাটাগরি, লোকেশন এবং পাবলিশারের নামে সার্চ কাজ করবে
     $sql .= " AND (lost_found.item_name LIKE '%$safe_search%' 
                 OR lost_found.category LIKE '%$safe_search%' 
                 OR lost_found.location LIKE '%$safe_search%'
