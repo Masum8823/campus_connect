@@ -13,14 +13,16 @@ $search = $_GET['search'] ?? '';
 $status_filter = $_GET['status'] ?? ''; 
 $sort = $_GET['sort'] ?? 'desc';
 
+// ৩. ডাইনামিক SQL কুয়েরি (পাবলিশারের নাম সার্চ লজিকসহ)
 $sql = "SELECT lost_found.*, users.full_name, users.profile_pic FROM lost_found 
         JOIN users ON lost_found.user_id = users.id WHERE 1=1";
 
 if($search) {
     $safe_search = mysqli_real_escape_string($conn, $search);
+    // আইটেম নাম, ক্যাটাগরি, লোকেশন এবং পাবলিশারের নামে সার্চ কাজ করবে
     $sql .= " AND (lost_found.item_name LIKE '%$safe_search%' 
                 OR lost_found.category LIKE '%$safe_search%' 
-                OR lost_found.location LIKE '%$safe_search%' 
+                OR lost_found.location LIKE '%$safe_search%'
                 OR users.full_name LIKE '%$safe_search%')";
 }
 
@@ -29,7 +31,6 @@ elseif($status_filter == 'found') $sql .= " AND item_status = 'found' AND is_res
 elseif($status_filter == 'resolved') $sql .= " AND is_resolved = 1";
 
 $sql .= " ORDER BY created_at " . ($sort == 'asc' ? 'ASC' : 'DESC');
-
 $items = mysqli_query($conn, $sql);
 
 function getCategoryIcon($category) {
@@ -56,13 +57,15 @@ function getCategoryIcon($category) {
         :root { --primary-color: #0d6efd; --bg-light: #f0f2f5; --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.05); }
         body { background-color: var(--bg-light); font-family: 'Plus Jakarta Sans', sans-serif; padding-top: 80px; }
 
+        /* Sidebar Styling */
         .sidebar-filter { border-radius: 20px; border: none; background: white; box-shadow: var(--card-shadow); padding: 25px; }
         .filter-title { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.2px; color: #adb5bd; margin-bottom: 20px; display: block; }
         
-        .filter-link { border-radius: 12px; margin-bottom: 6px; font-size: 14px; font-weight: 500; transition: 0.2s; border: none; padding: 10px 15px; color: #4b4f56; }
+        .filter-link { border-radius: 12px; margin-bottom: 6px; font-size: 14px; font-weight: 500; transition: 0.2s; border: none; padding: 12px 15px; color: #4b4f56; }
         .filter-link:hover { background-color: #f8f9fa; color: var(--primary-color); transform: translateX(5px); }
         .filter-link.active { background-color: #e7f3ff; color: var(--primary-color); }
 
+        /* Item Card Premium */
         .item-card { border-radius: 22px; border: none; background: white; transition: all 0.3s ease; box-shadow: var(--card-shadow); overflow: hidden; height: 100%; display: flex; flex-direction: column; }
         .item-card:hover { transform: translateY(-8px); box-shadow: 0 15px 35px rgba(0,0,0,0.1); }
         
@@ -76,6 +79,7 @@ function getCategoryIcon($category) {
         .location-tag { font-size: 11px; font-weight: 700; color: #d85140; background: #fff1f0; padding: 5px 12px; border-radius: 8px; display: inline-flex; align-items: center; gap: 5px; }
         .category-icon { width: 35px; height: 35px; background: #f0f7ff; color: var(--primary-color); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
 
+        /* Publisher Info Styling */
         .publisher-info { background: #f8f9fa; border-radius: 12px; padding: 8px 12px; display: flex; align-items: center; margin-bottom: 15px; }
         .publisher-img-sm { width: 24px; height: 24px; object-fit: cover; border-radius: 50%; border: 1px solid #ddd; }
 
@@ -86,135 +90,142 @@ function getCategoryIcon($category) {
 </head>
 <body>
 
-    <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm fixed-top">
-        <div class="container">
-            <a class="navbar-brand fw-bold fs-4" href="../user/dashboard.php">
-                <i class="bi bi-search-heart me-2"></i>Lost & Found
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm fixed-top">
+    <div class="container">
+        <a class="navbar-brand fw-bold fs-4" href="../user/dashboard.php">
+            <i class="bi bi-search-heart me-2"></i>Lost & Found
+        </a>
+        <div class="ms-auto d-flex align-items-center">
+            <a href="../user/dashboard.php" class="btn btn-light btn-sm fw-bold rounded-pill px-4 shadow-sm me-2">Feed</a>
+            <a href="post_item.php" class="btn btn-warning btn-sm fw-bold rounded-pill px-4 shadow-sm text-dark">
+                <i class="bi bi-plus-lg me-1"></i> Post Item
             </a>
-            <div class="ms-auto d-flex align-items-center">
-                <a href="../user/dashboard.php" class="btn btn-light btn-sm fw-bold rounded-pill px-4 shadow-sm me-2">Feed</a>
-                <a href="post_item.php" class="btn btn-warning btn-sm fw-bold rounded-pill px-4 shadow-sm text-dark">
-                    <i class="bi bi-plus-lg me-1"></i> Post Item
-                </a>
+        </div>
+    </div>
+</nav>
+
+<div class="container mt-4">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-4 col-lg-3 mb-4">
+            <div class="sidebar-filter sticky-top" style="top: 100px;">
+                <span class="filter-title">Search & Filter</span>
+                <form method="GET">
+                    <div class="search-wrapper">
+                        <i class="bi bi-search"></i>
+                        <input type="text" name="search" class="form-control premium-input" placeholder="Find items or people..." value="<?php echo htmlspecialchars($search); ?>">
+                    </div>
+
+                    <div class="list-group list-group-flush mb-4">
+                        <a href="?status=&search=<?php echo urlencode($search); ?>" class="list-group-item list-group-item-action filter-link <?php echo $status_filter == '' ? 'active' : ''; ?>">
+                            <i class="bi bi-collection-fill me-2"></i> All Reports
+                        </a>
+                        <a href="?status=lost&search=<?php echo urlencode($search); ?>" class="list-group-item list-group-item-action filter-link <?php echo $status_filter == 'lost' ? 'active' : ''; ?>">
+                            <i class="bi bi-patch-question-fill me-2 text-danger"></i> Lost Items
+                        </a>
+                        <a href="?status=found&search=<?php echo urlencode($search); ?>" class="list-group-item list-group-item-action filter-link <?php echo $status_filter == 'found' ? 'active' : ''; ?>">
+                            <i class="bi bi-patch-check-fill me-2 text-success"></i> Found Items
+                        </a>
+                        <a href="?status=resolved&search=<?php echo urlencode($search); ?>" class="list-group-item list-group-item-action filter-link <?php echo $status_filter == 'resolved' ? 'active' : ''; ?>">
+                            <i class="bi bi-shield-fill-check me-2 text-primary"></i> Solved Cases
+                        </a>
+                    </div>
+
+                    <label class="small fw-bold text-muted mb-2 ps-1">Sort by Date</label>
+                    <select name="sort" class="form-select border-0 bg-light rounded-3 mb-4" style="padding: 10px;" onchange="this.form.submit()">
+                        <option value="desc" <?php echo ($sort == 'desc') ? 'selected' : ''; ?>>Newest First</option>
+                        <option value="asc" <?php echo ($sort == 'asc') ? 'selected' : ''; ?>>Oldest First</option>
+                    </select>
+
+                    <button type="submit" class="btn btn-dark w-100 rounded-pill py-2 fw-bold">Update Hub</button>
+                </form>
             </div>
         </div>
-    </nav>
 
-    <div class="container mt-4">
-        <div class="row">
-            <!-- Sidebar -->
-            <div class="col-md-4 col-lg-3 mb-4">
-                <div class="sidebar-filter sticky-top" style="top: 100px;">
-                    <span class="filter-title">Search & Filter</span>
-                    <form method="GET">
-                        <div class="search-wrapper">
-                            <i class="bi bi-search"></i>
-                            <input type="text" name="search" class="form-control premium-input" placeholder="Search item or publisher..." value="<?php echo htmlspecialchars($search); ?>">
-                        </div>
+        <!-- Content Area -->
+        <div class="col-md-8 col-lg-9">
+            <div class="row">
+                <?php if(mysqli_num_rows($items) > 0): ?>
+                    <?php while($row = mysqli_fetch_assoc($items)): ?>
+                        <div class="col-lg-4 col-md-6 mb-4">
+                            <div class="card item-card">
+                                <div class="img-container">
+                                    <span class="status-badge <?php echo $row['item_status'] == 'lost' ? 'bg-danger' : 'bg-primary'; ?> text-white">
+                                        <?php echo $row['item_status']; ?>
+                                    </span>
 
-                        <div class="list-group list-group-flush mb-4">
-                            <a href="?status=&search=<?php echo urlencode($search); ?>&sort=<?php echo $sort; ?>" class="list-group-item list-group-item-action filter-link <?php echo $status_filter == '' ? 'active' : ''; ?>">All Reports</a>
-                            <a href="?status=lost&search=<?php echo urlencode($search); ?>&sort=<?php echo $sort; ?>" class="list-group-item list-group-item-action filter-link <?php echo $status_filter == 'lost' ? 'active' : ''; ?>">Lost Items</a>
-                            <a href="?status=found&search=<?php echo urlencode($search); ?>&sort=<?php echo $sort; ?>" class="list-group-item list-group-item-action filter-link <?php echo $status_filter == 'found' ? 'active' : ''; ?>">Found Items</a>
-                            <a href="?status=resolved&search=<?php echo urlencode($search); ?>&sort=<?php echo $sort; ?>" class="list-group-item list-group-item-action filter-link <?php echo $status_filter == 'resolved' ? 'active' : ''; ?>">Solved Cases</a>
-                        </div>
+                                    <?php if($row['is_resolved'] == 1): ?>
+                                        <div class="resolved-overlay">
+                                            <i class="bi bi-check-circle-fill me-2"></i> RESOLVED
+                                        </div>
+                                    <?php endif; ?>
 
-                        <label class="small fw-bold text-muted mb-2 ps-1">Sort by Date</label>
-                        <select name="sort" class="form-select border-0 bg-light rounded-3 mb-4" style="padding: 10px;" onchange="this.form.submit()">
-                            <option value="desc" <?php echo ($sort == 'desc') ? 'selected' : ''; ?>>Newest First</option>
-                            <option value="asc" <?php echo ($sort == 'asc') ? 'selected' : ''; ?>>Oldest First</option>
-                        </select>
-
-                        <button type="submit" class="btn btn-dark w-100 rounded-pill py-2 fw-bold">Update Hub</button>
-                    </form>
-                </div>
-            </div>
-
-            <!-- Content Area -->
-            <div class="col-md-8 col-lg-9">
-                <div class="row">
-                    <?php if(mysqli_num_rows($items) > 0): ?>
-                        <?php while($row = mysqli_fetch_assoc($items)): ?>
-                            <div class="col-lg-4 col-md-6 mb-4">
-                                <div class="card item-card">
-                                    <div class="img-container">
-                                        <span class="status-badge <?php echo $row['item_status'] == 'lost' ? 'bg-danger' : 'bg-primary'; ?> text-white">
-                                            <?php echo $row['item_status']; ?>
-                                        </span>
-
-                                        <?php if($row['is_resolved'] == 1): ?>
-                                            <div class="resolved-overlay">
-                                                <i class="bi bi-check-circle-fill me-2"></i> RESOLVED
+                                    <a href="view_item.php?id=<?php echo $row['id']; ?>">
+                                        <?php if($row['item_image'] != 'uploads/items/no_image.png' && !empty($row['item_image'])): ?>
+                                            <img src="../<?php echo $row['item_image']; ?>" class="item-img <?php echo ($row['is_resolved'] == 1) ? 'filter: grayscale(100%);' : ''; ?>">
+                                        <?php else: ?>
+                                            <div class="d-flex align-items-center justify-content-center h-100 bg-light text-muted">
+                                                <i class="bi <?php echo getCategoryIcon($row['category']); ?> display-2 opacity-25"></i>
                                             </div>
                                         <?php endif; ?>
+                                    </a>
+                                </div>
 
-                                        <a href="view_item.php?id=<?php echo $row['id']; ?>">
-                                            <?php if($row['item_image'] != 'uploads/items/no_image.png'): ?>
-                                                <img src="../<?php echo $row['item_image']; ?>" class="item-img <?php echo ($row['is_resolved'] == 1) ? 'filter: grayscale(100%);' : ''; ?>">
-                                            <?php else: ?>
-                                                <div class="d-flex align-items-center justify-content-center h-100 bg-light text-muted">
-                                                    <i class="bi <?php echo getCategoryIcon($row['category']); ?> display-2 opacity-25"></i>
-                                                </div>
-                                            <?php endif; ?>
-                                        </a>
+                                <div class="card-body p-4">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <div class="category-icon" title="<?php echo $row['category']; ?>">
+                                            <i class="bi <?php echo getCategoryIcon($row['category']); ?>"></i>
+                                        </div>
+                                        <div class="location-tag">
+                                            <i class="bi bi-geo-alt-fill"></i> <?php echo $row['location']; ?>
+                                        </div>
                                     </div>
 
-                                    <div class="card-body p-4">
-                                        <div class="d-flex justify-content-between align-items-center mb-3">
-                                            <div class="category-icon" title="<?php echo $row['category']; ?>">
-                                                <i class="bi <?php echo getCategoryIcon($row['category']); ?>"></i>
-                                            </div>
-                                            <div class="location-tag">
-                                                <i class="bi bi-geo-alt-fill"></i> <?php echo $row['location']; ?>
-                                            </div>
-                                        </div>
+                                    <h6 class="fw-bold text-dark mb-2 <?php echo ($row['is_resolved'] == 1) ? 'text-muted text-decoration-line-through' : ''; ?>">
+                                        <?php echo $row['item_name']; ?>
+                                    </h6>
 
-                                        <h6 class="fw-bold text-dark mb-2 <?php echo ($row['is_resolved'] == 1) ? 'text-muted text-decoration-line-through' : ''; ?>">
-                                            <?php echo $row['item_name']; ?>
-                                        </h6>
+                                    <p class="text-secondary small mb-3" style="height: 40px; overflow: hidden; line-height: 1.5;">
+                                        <?php echo nl2br(substr($row['description'], 0, 70)); ?>...
+                                    </p>
 
-                                        <p class="text-secondary small mb-3" style="height: 40px; overflow: hidden; line-height: 1.5;">
-                                            <?php echo nl2br(substr($row['description'], 0, 70)); ?>...
-                                        </p>
-
-                                        <!-- Publisher Info -->
-                                        <div class="publisher-info">
-                                            <?php $p_pic = ($row['profile_pic'] != 'default.png') ? "../" . $row['profile_pic'] : "https://ui-avatars.com/api/?name=".urlencode($row['full_name']); ?>
-                                            <img src="<?php echo $p_pic; ?>" class="publisher-img-sm me-2 shadow-sm">
-                                            <small class="text-dark fw-bold" style="font-size: 11px;"><?php echo $row['full_name']; ?></small>
-                                        </div>
-
-                                        <div class="d-flex justify-content-between align-items-center pt-3 border-top">
-                                            <div class="d-flex align-items-center">
-                                                <i class="bi bi-clock text-muted me-1" style="font-size: 12px;"></i>
-                                                <small class="text-muted" style="font-size: 11px;"><?php echo date('M d', strtotime($row['created_at'])); ?></small>
-                                            </div>
-                                            <a href="view_item.php?id=<?php echo $row['id']; ?>" class="btn btn-sm btn-link text-primary fw-bold p-0 text-decoration-none">Details <i class="bi bi-arrow-right"></i></a>
-                                        </div>
-
-                                        <?php if($row['user_id'] == $_SESSION['user_id']): ?>
-                                            <div class="d-flex gap-2 mt-3 pt-2 border-top">
-                                                <a href="edit_item.php?id=<?php echo $row['id']; ?>" class="btn btn-sm btn-light border flex-grow-1 text-secondary" style="font-size: 11px;"><i class="bi bi-pencil"></i></a>
-                                                <a href="delete_item.php?id=<?php echo $row['id']; ?>" class="btn btn-sm btn-light border flex-grow-1 text-danger" onclick="return confirm('Delete?')" style="font-size: 11px;"><i class="bi bi-trash"></i></a>
-                                            </div>
-                                        <?php endif; ?>
+                                    <!-- Publisher Info (Added this section) -->
+                                    <div class="publisher-info">
+                                        <?php $p_pic = ($row['profile_pic'] != 'default.png') ? "../" . $row['profile_pic'] : "https://ui-avatars.com/api/?name=".urlencode($row['full_name']); ?>
+                                        <img src="<?php echo $p_pic; ?>" class="publisher-img-sm me-2 shadow-sm">
+                                        <small class="text-dark fw-bold" style="font-size: 11px;"><?php echo $row['full_name']; ?></small>
                                     </div>
+
+                                    <div class="d-flex justify-content-between align-items-center pt-3 border-top mt-auto">
+                                        <div class="d-flex align-items-center">
+                                            <i class="bi bi-clock text-muted me-1" style="font-size: 12px;"></i>
+                                            <small class="text-muted" style="font-size: 11px;"><?php echo date('M d', strtotime($row['created_at'])); ?></small>
+                                        </div>
+                                        <a href="view_item.php?id=<?php echo $row['id']; ?>" class="btn btn-sm btn-link text-primary fw-bold p-0 text-decoration-none">Details <i class="bi bi-arrow-right"></i></a>
+                                    </div>
+
+                                    <?php if($row['user_id'] == $_SESSION['user_id']): ?>
+                                        <div class="d-flex gap-2 mt-3 pt-2 border-top">
+                                            <a href="edit_item.php?id=<?php echo $row['id']; ?>" class="btn btn-sm btn-light border flex-grow-1 text-secondary" style="font-size: 11px;"><i class="bi bi-pencil"></i></a>
+                                            <a href="delete_item.php?id=<?php echo $row['id']; ?>" class="btn btn-sm btn-light border flex-grow-1 text-danger" onclick="return confirm('Delete?')" style="font-size: 11px;"><i class="bi bi-trash"></i></a>
+                                        </div>
+                                    <?php endif; ?>
                                 </div>
                             </div>
-                        <?php endwhile; ?>
-                    <?php else: ?>
-                        <div class="col-12 text-center py-5 bg-white rounded-4 shadow-sm border">
-                            <i class="bi bi-search display-1 text-muted opacity-25"></i>
-                            <h5 class="mt-3 text-muted fw-bold">No results found</h5>
-                            <p class="text-muted small">Try searching by item name or publisher name.</p>
                         </div>
-                    <?php endif; ?>
-                </div>
+                    <?php endwhile; ?>
+                <?php else: ?>
+                    <div class="col-12 text-center py-5 bg-white rounded-4 shadow-sm border">
+                        <i class="bi bi-search display-1 text-muted opacity-25"></i>
+                        <h5 class="mt-3 text-muted fw-bold">No results found</h5>
+                        <p class="text-muted small">Try different keywords or status filters.</p>
+                    </div>
+                <?php endif; ?>
             </div>
         </div>
     </div>
+</div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
