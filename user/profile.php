@@ -51,7 +51,7 @@ $profile_img = ($user['profile_pic'] != 'default.png') ? "../" . $user['profile_
         
         /* Post Styling */
         .timeline-post { border-radius: 20px; border: none; box-shadow: var(--card-shadow); margin-bottom: 20px; background: white; overflow: hidden; }
-        .post-img { width: 100%; max-height: 400px; object-fit: cover; border-radius: 12px; margin-top: 10px; }
+        .post-img { width: 100%; max-height: 400px; object-fit: cover; border-radius: 12px; margin-top: 10px; border: 1px solid #eee; }
         .section-title { font-weight: 800; color: #2d3436; margin-bottom: 25px; display: flex; align-items: center; gap: 10px; }
     </style>
 </head>
@@ -95,7 +95,7 @@ $profile_img = ($user['profile_pic'] != 'default.png') ? "../" . $user['profile_
                             <?php endif; ?>
                         </div>
 
-                        <!-- Right Column: Details & Stats -->
+                        <!-- Right Column -->
                         <div class="col-md-8 ps-md-5 mt-5 mt-md-0">
                             <h5 class="section-title" style="font-size: 18px;">Information Details</h5>
                             <div class="row">
@@ -103,7 +103,7 @@ $profile_img = ($user['profile_pic'] != 'default.png') ? "../" . $user['profile_
                                     <label class="info-label">University ID</label>
                                     <p class="info-value"><?php echo $user['university_id']; ?></p>
                                     <label class="info-label">Official Email</label>
-                                    <p class="info-value"><?php echo $user['email']; ?></p>
+                                    <p class="info-value text-truncate"><?php echo $user['email']; ?></p>
                                     <label class="info-label">Contact</label>
                                     <p class="info-value"><?php echo $user['phone'] ?? 'Not provided'; ?></p>
                                 </div>
@@ -148,7 +148,7 @@ $profile_img = ($user['profile_pic'] != 'default.png') ? "../" . $user['profile_
                     </div>
                 </div>
 
-                <!-- --- ৪. NEW: User Posts Timeline Section --- -->
+                <!-- --- User Posts Timeline --- -->
                 <div class="row justify-content-center">
                     <div class="col-md-9">
                         <h4 class="section-title"><i class="bi bi-grid-3x3-gap-fill text-primary"></i> <?php echo $is_my_profile ? "My Timeline" : $user['full_name']."'s Posts"; ?></h4>
@@ -156,8 +156,16 @@ $profile_img = ($user['profile_pic'] != 'default.png') ? "../" . $user['profile_
                         <?php if(mysqli_num_rows($user_posts) > 0): ?>
                             <?php while($post = mysqli_fetch_assoc($user_posts)): 
                                 $pid = $post['id'];
-                                $likes = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM likes WHERE post_id='$pid'"))['total'];
-                                $comments = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM comments WHERE post_id='$pid'"))['total'];
+                                
+                                // লাইক সংখ্যা বের করা
+                                $likes_res = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM likes WHERE post_id='$pid'"));
+                                $likes_count = $likes_res['total'];
+                                
+                                // চেক করা আমি কি লাইক দিয়েছি কি না
+                                $check_like = mysqli_query($conn, "SELECT * FROM likes WHERE post_id='$pid' AND user_id='$current_user_id'");
+                                $is_liked = mysqli_num_rows($check_like) > 0;
+
+                                $comments_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM comments WHERE post_id='$pid'"))['total'];
                             ?>
                                 <div class="card timeline-post shadow-sm p-4">
                                     <div class="d-flex justify-content-between align-items-center mb-3">
@@ -168,7 +176,7 @@ $profile_img = ($user['profile_pic'] != 'default.png') ? "../" . $user['profile_
                                                 <small class="text-muted" style="font-size: 11px;"><?php echo date('M d, Y', strtotime($post['created_at'])); ?></small>
                                             </div>
                                         </div>
-                                        <!-- Actions (Only for owner or admin) -->
+                                        
                                         <?php if($is_my_profile || $user_role == 'admin'): ?>
                                             <div class="dropdown">
                                                 <i class="bi bi-three-dots text-muted" role="button" data-bs-toggle="dropdown"></i>
@@ -185,13 +193,19 @@ $profile_img = ($user['profile_pic'] != 'default.png') ? "../" . $user['profile_
                                     <p class="card-text mb-3" style="font-size: 15px; color: #444;"><?php echo nl2br($post['content']); ?></p>
 
                                     <?php if(!empty($post['post_image'])): ?>
-                                        <img src="../<?php echo $post['post_image']; ?>" class="post-img mb-3">
+                                        <img src="../<?php echo $post['post_image']; ?>" class="post-img mb-3 shadow-sm">
                                     <?php endif; ?>
 
-                                    <div class="d-flex gap-3 text-muted small fw-bold border-top pt-3">
-                                        <span><i class="bi bi-hand-thumbs-up"></i> <?php echo $likes; ?> Likes</span>
+                                    <!-- Updated Like and Comment Buttons -->
+                                    <div class="d-flex gap-4 text-muted small fw-bold border-top pt-3">
+                                        <!-- লাইক বাটন লিঙ্ক করা হলো -->
+                                        <a href="toggle_like.php?post_id=<?php echo $pid; ?>" class="text-decoration-none <?php echo $is_liked ? 'text-primary' : 'text-muted'; ?>">
+                                            <i class="bi <?php echo $is_liked ? 'bi-hand-thumbs-up-fill' : 'bi-hand-thumbs-up'; ?>"></i> 
+                                            <?php echo $likes_count; ?> Like<?php echo ($likes_count != 1) ? 's' : ''; ?>
+                                        </a>
+
                                         <a href="../post/view_post.php?id=<?php echo $pid; ?>" class="text-decoration-none text-muted">
-                                            <span><i class="bi bi-chat-left"></i> <?php echo $comments; ?> Comments</span>
+                                            <i class="bi bi-chat-left"></i> <?php echo $comments_count; ?> Comments
                                         </a>
                                     </div>
                                 </div>
@@ -204,7 +218,6 @@ $profile_img = ($user['profile_pic'] != 'default.png') ? "../" . $user['profile_
                         <?php endif; ?>
                     </div>
                 </div>
-                <!-- Timeline End -->
 
             </div>
         </div>
