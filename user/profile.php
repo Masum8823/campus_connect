@@ -10,9 +10,11 @@ if(!isset($_SESSION['user_id'])){
 $current_user_id = $_SESSION['user_id'];
 $user_role = $_SESSION['role'];
 
+// ১. কার প্রোফাইল দেখছি সেটি আইডি দিয়ে ধরা
 $view_user_id = isset($_GET['id']) ? $_GET['id'] : $current_user_id;
 $is_my_profile = ($view_user_id == $current_user_id);
 
+// ২. ইউজারের তথ্য আনা
 $query = mysqli_query($conn, "SELECT * FROM users WHERE id='$view_user_id'");
 $user = mysqli_fetch_assoc($query);
 
@@ -21,6 +23,7 @@ if(!$user){
     exit();
 }
 
+// --- ৩. কানেকশন স্ট্যাটাস চেক (Network) ---
 $conn_status_query = mysqli_query($conn, "SELECT * FROM connections WHERE (sender_id='$current_user_id' AND receiver_id='$view_user_id') OR (sender_id='$view_user_id' AND receiver_id='$current_user_id')");
 $conn_data = mysqli_fetch_assoc($conn_status_query);
 $is_connected = false;
@@ -31,6 +34,7 @@ if($conn_data){
     else $is_pending_conn = true;
 }
 
+// --- ৪. মেসেজ রিকোয়েস্ট লজিক ---
 $msg_req_query = mysqli_query($conn, "SELECT * FROM message_requests WHERE (sender_id='$current_user_id' AND receiver_id='$view_user_id') OR (sender_id='$view_user_id' AND receiver_id='$current_user_id')");
 $msg_req_data = mysqli_fetch_assoc($msg_req_query);
 
@@ -41,10 +45,17 @@ if($msg_req_data) {
     $msg_req_sender = $msg_req_data['sender_id'];
 }
 
-$is_blocked = false; 
-$block_check = mysqli_query($conn, "SELECT * FROM message_blocks WHERE (blocker_id='$current_user_id' AND blocked_id='$view_user_id') OR (blocker_id='$view_user_id' AND blocked_id='$current_user_id')");
-if($block_check && mysqli_num_rows($block_check) > 0) $is_blocked = true;
+// --- ৫. উন্নত ব্লক চেক (Advanced Block Logic) ---
+// আমি কি তাকে ব্লক করেছি?
+$i_blocked_query = mysqli_query($conn, "SELECT * FROM message_blocks WHERE blocker_id='$current_user_id' AND blocked_id='$view_user_id'");
+$i_blocked_him = mysqli_num_rows($i_blocked_query) > 0;
 
+// সে কি আমাকে ব্লক করেছে?
+$he_blocked_query = mysqli_query($conn, "SELECT * FROM message_blocks WHERE blocker_id='$view_user_id' AND blocked_id='$current_user_id'");
+$he_blocked_me = mysqli_num_rows($he_blocked_query) > 0;
+
+
+// ৬. ইউজারের পোস্ট টাইমলাইন আনা
 $user_posts_query = "SELECT * FROM posts WHERE user_id='$view_user_id' ORDER BY created_at DESC";
 $user_posts = mysqli_query($conn, $user_posts_query);
 
@@ -101,14 +112,24 @@ $profile_img = ($user['profile_pic'] != 'default.png') ? "../" . $user['profile_
                             <p class="small text-secondary fw-medium italic mb-4">"<?php echo $user['bio'] ?? 'No bio added yet.'; ?>"</p>
 
                             <!-- Button Container -->
-                            <div class="d-grid gap-2">
+                            <div class="d-grid gap-2 px-3">
                                 <?php if($is_my_profile): ?>
                                     <a href="edit_profile.php" class="btn btn-primary rounded-pill fw-bold py-2 shadow-sm">Edit Profile</a>
-                                <?php elseif($is_blocked): ?>
-                                    <div class="alert alert-danger small py-2 rounded-pill">You are blocked</div>
+                                <?php elseif($he_blocked_me): ?>
+                                    <!-- যদি সে আমাকে ব্লক করে থাকে -->
+                                    <div class="alert alert-danger small py-2 rounded-pill text-center mb-0">
+                                        <i class="bi bi-slash-circle me-1"></i> You are blocked
+                                    </div>
+                                <?php elseif($i_blocked_him): ?>
+                                    <!-- যদি আমি তাকে ব্লক করে থাকি (Unblock Option) -->
+                                    <a href="toggle_block.php?id=<?php echo $view_user_id; ?>" class="btn btn-danger rounded-pill fw-bold py-2 shadow-sm">
+                                        <i class="bi bi-person-check-fill me-2"></i> Unblock User
+                                    </a>
                                 <?php else: ?>
                                     
-                                    <!-- 1. Connection Button -->
+                                    <!-- স্বাভাবিক বাটনগুলো যখন কেউ কাউকে ব্লক করেনি -->
+                                    
+                                    <!-- ১. কানেকশন বাটন -->
                                     <?php if($is_connected): ?>
                                         <a href="toggle_connect.php?id=<?php echo $view_user_id; ?>" class="btn btn-success rounded-pill fw-bold py-2"><i class="bi bi-person-check-fill"></i> Connected</a>
                                     <?php elseif($is_pending_conn): ?>
@@ -117,42 +138,33 @@ $profile_img = ($user['profile_pic'] != 'default.png') ? "../" . $user['profile_
                                         <a href="toggle_connect.php?id=<?php echo $view_user_id; ?>" class="btn btn-outline-primary rounded-pill fw-bold py-2">Connect</a>
                                     <?php endif; ?>
 
-                                    <!-- 2. Message Request Button Logic (As per your Rule 3) -->
+                                    <!-- ২. মেসেজ বাটন -->
                                     <div class="mt-1">
                                         <?php if($_SESSION['role'] == 'admin' || $chat_status == 'accepted'): ?>
-                                            <!-- Direct Chat for Admin or Accepted Requests -->
                                             <a href="chat.php?user_id=<?php echo $view_user_id; ?>" class="btn btn-dark w-100 rounded-pill fw-bold py-2 shadow-sm">
                                                 <i class="bi bi-chat-fill text-info"></i> Message
                                             </a>
                                         <?php elseif($chat_status == 'pending'): ?>
                                             <?php if($msg_req_sender == $current_user_id): ?>
-                                                <!-- If I sent the request: Show Cancel option -->
                                                 <button class="btn btn-secondary w-100 rounded-pill fw-bold py-2 mb-1" disabled>Request Sent</button>
-                                                <a href="cancel_msg_request.php?id=<?php echo $view_user_id; ?>" class="text-danger small fw-bold text-decoration-none">Cancel Request</a>
+                                                <a href="cancel_msg_request.php?id=<?php echo $view_user_id; ?>" class="text-danger small fw-bold text-decoration-none text-center d-block">Cancel Request</a>
                                             <?php else: ?>
-                                                <!-- If I received the request: Show Review option -->
                                                 <a href="message_requests.php" class="btn btn-warning w-100 rounded-pill fw-bold py-2">Review Request</a>
                                             <?php endif; ?>
                                         <?php else: ?>
-                                            <!-- Send New Message Request -->
                                             <a href="send_msg_request.php?id=<?php echo $view_user_id; ?>" class="btn btn-outline-dark w-100 rounded-pill fw-bold py-2">
-                                                <i class="bi bi-chat-dots"></i> <?php echo ($_SESSION['role'] == 'teacher') ? 'Contact Student' : 'Request to Message'; ?>
+                                                <i class="bi bi-chat-dots"></i> Message Request
                                             </a>
                                         <?php endif; ?>
-                                        <?php 
-                                        
-                                        $i_blocked_him = mysqli_num_rows(mysqli_query($conn, "SELECT * FROM message_blocks WHERE blocker_id='$current_user_id' AND blocked_id='$view_user_id'")) > 0;
-                                        ?>
-
-                                        <?php if(!$is_my_profile): ?>
-                                            <div class="mt-2">
-                                                <a href="toggle_block.php?id=<?php echo $view_user_id; ?>" class="btn <?php echo $i_blocked_him ? 'btn-outline-danger' : 'btn-link text-danger'; ?> w-100 rounded-pill btn-sm fw-bold text-decoration-none">
-                                                    <i class="bi <?php echo $i_blocked_him ? 'bi-person-check' : 'bi-slash-circle'; ?>"></i> 
-                                                    <?php echo $i_blocked_him ? 'Unblock User' : 'Block User'; ?>
-                                                </a>
-                                            </div>
-                                        <?php endif; ?>
                                     </div>
+
+                                    <!-- ৩. ব্লক করার লিঙ্ক -->
+                                    <div class="text-center mt-2">
+                                        <a href="toggle_block.php?id=<?php echo $view_user_id; ?>" class="text-danger small text-decoration-none fw-bold" onclick="return confirm('Block this user?')">
+                                            <i class="bi bi-slash-circle"></i> Block User
+                                        </a>
+                                    </div>
+
                                 <?php endif; ?>
                             </div>
                         </div>
@@ -224,7 +236,7 @@ $profile_img = ($user['profile_pic'] != 'default.png') ? "../" . $user['profile_
                                     <?php if(!empty($post['post_image'])): ?><img src="../<?php echo $post['post_image']; ?>" class="post-img mb-3 shadow-sm border"><?php endif; ?>
                                     <div class="d-flex gap-4 text-muted small fw-bold border-top pt-3">
                                         <a href="toggle_like.php?post_id=<?php echo $pid; ?>" class="text-decoration-none <?php echo $is_liked ? 'text-primary' : 'text-muted'; ?>">
-                                            <i class="bi <?php echo $is_liked ? 'bi-hand-thumbs-up-fill' : 'bi-hand-thumbs-up'; ?>"></i> <?php echo $likes; ?> Likes
+                                            <i class="bi <?php echo $is_liked ? 'bi-hand-thumbs-up-fill' : 'bi-hand-thumbs-up'; ?> me-1"></i> <?php echo $likes; ?> Likes
                                         </a>
                                         <a href="../post/view_post.php?id=<?php echo $pid; ?>" class="text-decoration-none text-muted"><i class="bi bi-chat-left"></i> <?php echo $comments; ?> Comments</a>
                                     </div>
