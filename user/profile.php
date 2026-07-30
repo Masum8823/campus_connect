@@ -23,25 +23,27 @@ if(!$user){
 
 $conn_status_query = mysqli_query($conn, "SELECT * FROM connections WHERE (sender_id='$current_user_id' AND receiver_id='$view_user_id') OR (sender_id='$view_user_id' AND receiver_id='$current_user_id')");
 $conn_data = mysqli_fetch_assoc($conn_status_query);
-
 $is_connected = false;
-$is_pending = false;
+$is_pending_conn = false;
 
 if($conn_data){
-    if($conn_data['status'] == 'accepted'){
-        $is_connected = true;
-    } else {
-        $is_pending = true;
-    }
+    if($conn_data['status'] == 'accepted') $is_connected = true;
+    else $is_pending_conn = true;
 }
 
 $msg_req_query = mysqli_query($conn, "SELECT * FROM message_requests WHERE (sender_id='$current_user_id' AND receiver_id='$view_user_id') OR (sender_id='$view_user_id' AND receiver_id='$current_user_id')");
 $msg_req_data = mysqli_fetch_assoc($msg_req_query);
 
 $chat_status = "none";
+$msg_req_sender = null;
 if($msg_req_data) {
     $chat_status = $msg_req_data['status'];
+    $msg_req_sender = $msg_req_data['sender_id'];
 }
+
+$is_blocked = false; 
+$block_check = mysqli_query($conn, "SELECT * FROM message_blocks WHERE (blocker_id='$current_user_id' AND blocked_id='$view_user_id') OR (blocker_id='$view_user_id' AND blocked_id='$current_user_id')");
+if($block_check && mysqli_num_rows($block_check) > 0) $is_blocked = true;
 
 $user_posts_query = "SELECT * FROM posts WHERE user_id='$view_user_id' ORDER BY created_at DESC";
 $user_posts = mysqli_query($conn, $user_posts_query);
@@ -87,7 +89,6 @@ $profile_img = ($user['profile_pic'] != 'default.png') ? "../" . $user['profile_
         
         <div class="row justify-content-center">
             <div class="col-lg-10">
-                <!-- Profile Info Card -->
                 <div class="card profile-card p-4 p-md-5 mb-5">
                     <div class="row">
                         <!-- Left Column: User Profile -->
@@ -97,45 +98,45 @@ $profile_img = ($user['profile_pic'] != 'default.png') ? "../" . $user['profile_
                             <span class="badge bg-primary-subtle text-primary rounded-pill px-3 py-2 mb-3 small fw-bold"><?php echo strtoupper($user['role']); ?></span>
                             <p class="text-muted small mb-4"><?php echo $user['dept']; ?> Department</p>
                             
-                            <div class="px-3 mb-4">
-                                <p class="small text-secondary fw-medium italic">"<?php echo $user['bio'] ?? 'No bio added yet.'; ?>"</p>
-                            </div>
+                            <p class="small text-secondary fw-medium italic mb-4">"<?php echo $user['bio'] ?? 'No bio added yet.'; ?>"</p>
 
-                            <!-- Buttons Section -->
-                            <div class="d-grid gap-2 px-3">
+                            <!-- Button Container -->
+                            <div class="d-grid gap-2">
                                 <?php if($is_my_profile): ?>
-                                    <a href="edit_profile.php" class="btn btn-primary rounded-pill fw-bold py-2 shadow-sm">
-                                        <i class="bi bi-pencil-square me-2"></i> Edit Profile
-                                    </a>
+                                    <a href="edit_profile.php" class="btn btn-primary rounded-pill fw-bold py-2 shadow-sm">Edit Profile</a>
+                                <?php elseif($is_blocked): ?>
+                                    <div class="alert alert-danger small py-2 rounded-pill">You are blocked</div>
                                 <?php else: ?>
-                                    <!-- Connection Button Logic -->
+                                    
+                                    <!-- 1. Connection Button -->
                                     <?php if($is_connected): ?>
-                                        <a href="toggle_connect.php?id=<?php echo $view_user_id; ?>" class="btn btn-success rounded-pill fw-bold py-2 shadow-sm">
-                                            <i class="bi bi-person-check-fill me-2"></i> Connected
-                                        </a>
-                                    <?php elseif($is_pending): ?>
-                                        <a href="toggle_connect.php?id=<?php echo $view_user_id; ?>" class="btn btn-warning rounded-pill fw-bold py-2 shadow-sm">
-                                            <i class="bi bi-clock-history me-2"></i> Request Pending
-                                        </a>
+                                        <a href="toggle_connect.php?id=<?php echo $view_user_id; ?>" class="btn btn-success rounded-pill fw-bold py-2"><i class="bi bi-person-check-fill"></i> Connected</a>
+                                    <?php elseif($is_pending_conn): ?>
+                                        <a href="toggle_connect.php?id=<?php echo $view_user_id; ?>" class="btn btn-warning rounded-pill fw-bold py-2">Pending Request</a>
                                     <?php else: ?>
-                                        <a href="toggle_connect.php?id=<?php echo $view_user_id; ?>" class="btn btn-outline-primary rounded-pill fw-bold py-2 shadow-sm">
-                                            <i class="bi bi-person-plus-fill me-2"></i> Connect
-                                        </a>
+                                        <a href="toggle_connect.php?id=<?php echo $view_user_id; ?>" class="btn btn-outline-primary rounded-pill fw-bold py-2">Connect</a>
                                     <?php endif; ?>
 
-                                    <!-- Message Request Button Logic (New) -->
-                                    <div class="mt-2">
-                                        <?php if($chat_status == 'accepted'): ?>
+                                    <!-- 2. Message Request Button Logic (As per your Rule 3) -->
+                                    <div class="mt-1">
+                                        <?php if($_SESSION['role'] == 'admin' || $chat_status == 'accepted'): ?>
+                                            <!-- Direct Chat for Admin or Accepted Requests -->
                                             <a href="chat.php?user_id=<?php echo $view_user_id; ?>" class="btn btn-dark w-100 rounded-pill fw-bold py-2 shadow-sm">
-                                                <i class="bi bi-chat-fill me-2 text-info"></i> Message
+                                                <i class="bi bi-chat-fill text-info"></i> Message
                                             </a>
                                         <?php elseif($chat_status == 'pending'): ?>
-                                            <button class="btn btn-secondary w-100 rounded-pill fw-bold py-2" disabled>
-                                                <i class="bi bi-clock-history me-2"></i> Message Requested
-                                            </button>
+                                            <?php if($msg_req_sender == $current_user_id): ?>
+                                                <!-- If I sent the request: Show Cancel option -->
+                                                <button class="btn btn-secondary w-100 rounded-pill fw-bold py-2 mb-1" disabled>Request Sent</button>
+                                                <a href="cancel_msg_request.php?id=<?php echo $view_user_id; ?>" class="text-danger small fw-bold text-decoration-none">Cancel Request</a>
+                                            <?php else: ?>
+                                                <!-- If I received the request: Show Review option -->
+                                                <a href="message_requests.php" class="btn btn-warning w-100 rounded-pill fw-bold py-2">Review Request</a>
+                                            <?php endif; ?>
                                         <?php else: ?>
-                                            <a href="send_msg_request.php?id=<?php echo $view_user_id; ?>" class="btn btn-outline-dark w-100 rounded-pill fw-bold py-2 shadow-sm">
-                                                <i class="bi bi-chat-dots me-2"></i> Send Message Request
+                                            <!-- Send New Message Request -->
+                                            <a href="send_msg_request.php?id=<?php echo $view_user_id; ?>" class="btn btn-outline-dark w-100 rounded-pill fw-bold py-2">
+                                                <i class="bi bi-chat-dots"></i> <?php echo ($_SESSION['role'] == 'teacher') ? 'Contact Student' : 'Request to Message'; ?>
                                             </a>
                                         <?php endif; ?>
                                     </div>
@@ -143,7 +144,7 @@ $profile_img = ($user['profile_pic'] != 'default.png') ? "../" . $user['profile_
                             </div>
                         </div>
 
-                        <!-- Right Column: Details -->
+                        <!-- Right Column: Details & Stats -->
                         <div class="col-md-8 ps-md-5 mt-5 mt-md-0">
                             <h5 class="section-title" style="font-size: 18px;">Information Details</h5>
                             <div class="row">
@@ -170,98 +171,58 @@ $profile_img = ($user['profile_pic'] != 'default.png') ? "../" . $user['profile_
                             </div>
 
                             <h5 class="section-title mt-4" style="font-size: 18px;">Activity Statistics</h5>
-                            <div class="row g-3">
-                                <div class="col-4">
-                                    <div class="stat-box shadow-sm">
-                                        <h3 class="fw-bold mb-0 text-primary"><?php echo mysqli_num_rows($user_posts); ?></h3>
-                                        <small class="text-muted fw-bold small">Posts</small>
-                                    </div>
-                                </div>
-                                <div class="col-4">
-                                    <div class="stat-box shadow-sm">
-                                        <h3 class="fw-bold mb-0 text-success">
-                                            <?php echo mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM comments WHERE user_id='$view_user_id'"))['total']; ?>
-                                        </h3>
-                                        <small class="text-muted fw-bold small">Comments</small>
-                                    </div>
-                                </div>
-                                <div class="col-4">
-                                    <div class="stat-box shadow-sm">
-                                        <h6 class="fw-bold mb-0 mt-2"><?php echo date('M Y', strtotime($user['created_at'])); ?></h6>
-                                        <small class="text-muted fw-bold small">Joined</small>
-                                    </div>
-                                </div>
+                            <div class="row g-3 text-center">
+                                <div class="col-4"><div class="stat-box shadow-sm"><h3 class="fw-bold mb-0 text-primary"><?php echo mysqli_num_rows($user_posts); ?></h3><small class="text-muted fw-bold small">Posts</small></div></div>
+                                <div class="col-4"><div class="stat-box shadow-sm"><h3 class="fw-bold mb-0 text-success"><?php echo mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM comments WHERE user_id='$view_user_id'"))['total']; ?></h3><small class="text-muted fw-bold small">Comments</small></div></div>
+                                <div class="col-4"><div class="stat-box shadow-sm"><h6 class="fw-bold mb-0 mt-2"><?php echo date('M Y', strtotime($user['created_at'])); ?></h6><small class="text-muted fw-bold small">Joined</small></div></div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- --- User Posts Timeline --- -->
+                <!-- Timeline Section -->
                 <div class="row justify-content-center">
                     <div class="col-md-10">
                         <h4 class="section-title"><i class="bi bi-grid-3x3-gap-fill text-primary"></i> <?php echo $is_my_profile ? "My Timeline" : $user['full_name']."'s Posts"; ?></h4>
-                        
                         <?php if(mysqli_num_rows($user_posts) > 0): ?>
                             <?php while($post = mysqli_fetch_assoc($user_posts)): 
                                 $pid = $post['id'];
-                                $likes_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM likes WHERE post_id='$pid'"))['total'];
+                                $likes = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM likes WHERE post_id='$pid'"))['total'];
                                 $is_liked = mysqli_num_rows(mysqli_query($conn, "SELECT * FROM likes WHERE post_id='$pid' AND user_id='$current_user_id'")) > 0;
-                                $comments_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM comments WHERE post_id='$pid'"))['total'];
+                                $comments = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM comments WHERE post_id='$pid'"))['total'];
                             ?>
                                 <div class="card timeline-post shadow-sm p-4">
                                     <div class="d-flex justify-content-between align-items-center mb-3">
                                         <div class="d-flex align-items-center">
                                             <img src="<?php echo $profile_img; ?>" class="rounded-circle me-2 border shadow-sm" width="40" height="40" style="object-fit:cover;">
-                                            <div>
-                                                <h6 class="mb-0 fw-bold small text-dark"><?php echo $user['full_name']; ?></h6>
-                                                <small class="text-muted" style="font-size: 11px;"><?php echo date('M d, Y', strtotime($post['created_at'])); ?></small>
-                                            </div>
+                                            <div><h6 class="mb-0 fw-bold small text-dark"><?php echo $user['full_name']; ?></h6><small class="text-muted" style="font-size: 11px;"><?php echo date('M d, Y', strtotime($post['created_at'])); ?></small></div>
                                         </div>
-                                        
                                         <?php if($is_my_profile || $user_role == 'admin'): ?>
                                             <div class="dropdown">
                                                 <i class="bi bi-three-dots text-muted" role="button" data-bs-toggle="dropdown"></i>
                                                 <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2">
-                                                    <?php if($is_my_profile): ?>
-                                                        <li><a class="dropdown-item small" href="../post/edit_post.php?id=<?php echo $pid; ?>"><i class="bi bi-pencil me-2"></i> Edit</a></li>
-                                                    <?php endif; ?>
-                                                    <li><a class="dropdown-item small text-danger" href="../post/delete_post.php?id=<?php echo $pid; ?>" onclick="return confirm('Delete this post?')"><i class="bi bi-trash me-2"></i> Delete</a></li>
+                                                    <?php if($is_my_profile): ?><li><a class="dropdown-item small" href="../post/edit_post.php?id=<?php echo $pid; ?>"><i class="bi bi-pencil me-2"></i> Edit</a></li><?php endif; ?>
+                                                    <li><a class="dropdown-item small text-danger" href="../post/delete_post.php?id=<?php echo $pid; ?>" onclick="return confirm('Delete?')"><i class="bi bi-trash me-2"></i> Delete</a></li>
                                                 </ul>
                                             </div>
                                         <?php endif; ?>
                                     </div>
-
                                     <p class="card-text mb-3" style="font-size: 15px; color: #444;"><?php echo nl2br($post['content']); ?></p>
-
-                                    <?php if(!empty($post['post_image'])): ?>
-                                        <img src="../<?php echo $post['post_image']; ?>" class="post-img mb-3 shadow-sm border">
-                                    <?php endif; ?>
-
+                                    <?php if(!empty($post['post_image'])): ?><img src="../<?php echo $post['post_image']; ?>" class="post-img mb-3 shadow-sm border"><?php endif; ?>
                                     <div class="d-flex gap-4 text-muted small fw-bold border-top pt-3">
                                         <a href="toggle_like.php?post_id=<?php echo $pid; ?>" class="text-decoration-none <?php echo $is_liked ? 'text-primary' : 'text-muted'; ?>">
-                                            <i class="bi <?php echo $is_liked ? 'bi-hand-thumbs-up-fill' : 'bi-hand-thumbs-up'; ?> me-1"></i> 
-                                            <?php echo $likes_count; ?> Like<?php echo ($likes_count != 1) ? 's' : ''; ?>
+                                            <i class="bi <?php echo $is_liked ? 'bi-hand-thumbs-up-fill' : 'bi-hand-thumbs-up'; ?>"></i> <?php echo $likes; ?> Likes
                                         </a>
-
-                                        <a href="../post/view_post.php?id=<?php echo $pid; ?>" class="text-decoration-none text-muted">
-                                            <i class="bi bi-chat-left"></i> <?php echo $comments_count; ?> Comments
-                                        </a>
+                                        <a href="../post/view_post.php?id=<?php echo $pid; ?>" class="text-decoration-none text-muted"><i class="bi bi-chat-left"></i> <?php echo $comments; ?> Comments</a>
                                     </div>
                                 </div>
                             <?php endwhile; ?>
-                        <?php else: ?>
-                            <div class="text-center py-5 bg-white rounded-4 border">
-                                <i class="bi bi-file-earmark-post display-1 text-muted opacity-25"></i>
-                                <p class="text-muted mt-3">No posts yet.</p>
-                            </div>
-                        <?php endif; ?>
+                        <?php else: ?><div class="text-center py-5 bg-white rounded-4 border"><i class="bi bi-file-earmark-post display-1 text-muted opacity-25"></i><p class="text-muted mt-3">No posts yet.</p></div><?php endif; ?>
                     </div>
                 </div>
-
             </div>
         </div>
     </div>
-
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
