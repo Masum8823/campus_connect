@@ -119,6 +119,14 @@ $all_posts = mysqli_query($conn, $posts_query);
             <a href="../academic/index.php" class="nav-link"><i class="bi bi-mortarboard text-success"></i> <span>Academic Hub</span></a>
             <a href="requests.php" class="nav-link"><i class="bi bi-person-plus text-danger"></i> <span>Requests</span></a>
             <a href="my_connections.php" class="nav-link"><i class="bi bi-people text-primary"></i> <span>Network</span></a>
+            <a href="message_requests.php" class="nav-link">
+            <i class="bi bi-chat-left-dots text-info"></i> <span>Message Requests</span>
+            <?php 
+            $count_msg_req = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM message_requests WHERE receiver_id='$current_user_id' AND status='pending'"));
+            if($count_msg_req['total'] > 0): ?>
+                <span class="badge bg-info rounded-pill float-end text-dark"><?php echo $count_msg_req['total']; ?></span>
+            <?php endif; ?>
+            </a>
             <a href="../alumni/index.php" class="nav-link"><i class="bi bi-award-fill text-dark"></i> <span>Alumni Hub</span></a>
         </nav>
     </div>

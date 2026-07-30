@@ -10,11 +10,9 @@ if(!isset($_SESSION['user_id'])){
 $current_user_id = $_SESSION['user_id'];
 $user_role = $_SESSION['role'];
 
-// ১. কার প্রোফাইল দেখছি সেটি আইডি দিয়ে ধরা
 $view_user_id = isset($_GET['id']) ? $_GET['id'] : $current_user_id;
 $is_my_profile = ($view_user_id == $current_user_id);
 
-// ২. ইউজারের তথ্য আনা
 $query = mysqli_query($conn, "SELECT * FROM users WHERE id='$view_user_id'");
 $user = mysqli_fetch_assoc($query);
 
@@ -23,7 +21,6 @@ if(!$user){
     exit();
 }
 
-// --- ৩. কানেকশন স্ট্যাটাস চেক করার লজিক (এটিই আগে মিসিং ছিল) ---
 $conn_status_query = mysqli_query($conn, "SELECT * FROM connections WHERE (sender_id='$current_user_id' AND receiver_id='$view_user_id') OR (sender_id='$view_user_id' AND receiver_id='$current_user_id')");
 $conn_data = mysqli_fetch_assoc($conn_status_query);
 
@@ -37,13 +34,18 @@ if($conn_data){
         $is_pending = true;
     }
 }
-// --------------------------------------------------------
 
-// ৪. এই ইউজারের করা সব পোস্ট তুলে আনা (Timeline)
+$msg_req_query = mysqli_query($conn, "SELECT * FROM message_requests WHERE (sender_id='$current_user_id' AND receiver_id='$view_user_id') OR (sender_id='$view_user_id' AND receiver_id='$current_user_id')");
+$msg_req_data = mysqli_fetch_assoc($msg_req_query);
+
+$chat_status = "none";
+if($msg_req_data) {
+    $chat_status = $msg_req_data['status'];
+}
+
 $user_posts_query = "SELECT * FROM posts WHERE user_id='$view_user_id' ORDER BY created_at DESC";
 $user_posts = mysqli_query($conn, $user_posts_query);
 
-// প্রোফাইল পিকচার লজিক
 $profile_img = ($user['profile_pic'] != 'default.png') ? "../" . $user['profile_pic'] : "https://ui-avatars.com/api/?name=".urlencode($user['full_name'])."&background=random&size=128";
 ?>
 
@@ -66,7 +68,7 @@ $profile_img = ($user['profile_pic'] != 'default.png') ? "../" . $user['profile_
         .info-value { font-size: 15px; color: #333; margin-bottom: 15px; font-weight: 600; }
         .stat-box { background: #f8f9fa; border-radius: 15px; padding: 15px; text-align: center; border: 1px solid #eee; }
         .timeline-post { border-radius: 20px; border: none; box-shadow: var(--card-shadow); margin-bottom: 20px; background: white; overflow: hidden; }
-        .post-img { width: 100%; max-height: 400px; object-fit: cover; border-radius: 12px; margin-top: 10px; }
+        .post-img { width: 100%; max-height: 400px; object-fit: cover; border-radius: 12px; margin-top: 10px; border: 1px solid #eee; }
         .section-title { font-weight: 800; color: #2d3436; margin-bottom: 25px; display: flex; align-items: center; gap: 10px; }
     </style>
 </head>
@@ -99,29 +101,49 @@ $profile_img = ($user['profile_pic'] != 'default.png') ? "../" . $user['profile_
                                 <p class="small text-secondary fw-medium italic">"<?php echo $user['bio'] ?? 'No bio added yet.'; ?>"</p>
                             </div>
 
-                            <!-- বাটন লজিক (Connect / Pending / Connected) -->
-                            <?php if($is_my_profile): ?>
-                                <a href="edit_profile.php" class="btn btn-primary w-100 rounded-pill fw-bold py-2 shadow-sm">
-                                    <i class="bi bi-pencil-square me-2"></i> Edit Profile
-                                </a>
-                            <?php else: ?>
-                                <?php if($is_connected): ?>
-                                    <a href="toggle_connect.php?id=<?php echo $view_user_id; ?>" class="btn btn-success w-100 rounded-pill fw-bold py-2 shadow-sm">
-                                        <i class="bi bi-person-check-fill me-2"></i> Connected
-                                    </a>
-                                <?php elseif($is_pending): ?>
-                                    <a href="toggle_connect.php?id=<?php echo $view_user_id; ?>" class="btn btn-warning w-100 rounded-pill fw-bold py-2 shadow-sm">
-                                        <i class="bi bi-clock-history me-2"></i> Request Pending
+                            <!-- Buttons Section -->
+                            <div class="d-grid gap-2 px-3">
+                                <?php if($is_my_profile): ?>
+                                    <a href="edit_profile.php" class="btn btn-primary rounded-pill fw-bold py-2 shadow-sm">
+                                        <i class="bi bi-pencil-square me-2"></i> Edit Profile
                                     </a>
                                 <?php else: ?>
-                                    <a href="toggle_connect.php?id=<?php echo $view_user_id; ?>" class="btn btn-outline-primary w-100 rounded-pill fw-bold py-2 shadow-sm">
-                                        <i class="bi bi-person-plus-fill me-2"></i> Connect
-                                    </a>
+                                    <!-- Connection Button Logic -->
+                                    <?php if($is_connected): ?>
+                                        <a href="toggle_connect.php?id=<?php echo $view_user_id; ?>" class="btn btn-success rounded-pill fw-bold py-2 shadow-sm">
+                                            <i class="bi bi-person-check-fill me-2"></i> Connected
+                                        </a>
+                                    <?php elseif($is_pending): ?>
+                                        <a href="toggle_connect.php?id=<?php echo $view_user_id; ?>" class="btn btn-warning rounded-pill fw-bold py-2 shadow-sm">
+                                            <i class="bi bi-clock-history me-2"></i> Request Pending
+                                        </a>
+                                    <?php else: ?>
+                                        <a href="toggle_connect.php?id=<?php echo $view_user_id; ?>" class="btn btn-outline-primary rounded-pill fw-bold py-2 shadow-sm">
+                                            <i class="bi bi-person-plus-fill me-2"></i> Connect
+                                        </a>
+                                    <?php endif; ?>
+
+                                    <!-- Message Request Button Logic (New) -->
+                                    <div class="mt-2">
+                                        <?php if($chat_status == 'accepted'): ?>
+                                            <a href="chat.php?user_id=<?php echo $view_user_id; ?>" class="btn btn-dark w-100 rounded-pill fw-bold py-2 shadow-sm">
+                                                <i class="bi bi-chat-fill me-2 text-info"></i> Message
+                                            </a>
+                                        <?php elseif($chat_status == 'pending'): ?>
+                                            <button class="btn btn-secondary w-100 rounded-pill fw-bold py-2" disabled>
+                                                <i class="bi bi-clock-history me-2"></i> Message Requested
+                                            </button>
+                                        <?php else: ?>
+                                            <a href="send_msg_request.php?id=<?php echo $view_user_id; ?>" class="btn btn-outline-dark w-100 rounded-pill fw-bold py-2 shadow-sm">
+                                                <i class="bi bi-chat-dots me-2"></i> Send Message Request
+                                            </a>
+                                        <?php endif; ?>
+                                    </div>
                                 <?php endif; ?>
-                            <?php endif; ?>
+                            </div>
                         </div>
 
-                        <!-- Right Column: Details & Stats -->
+                        <!-- Right Column: Details -->
                         <div class="col-md-8 ps-md-5 mt-5 mt-md-0">
                             <h5 class="section-title" style="font-size: 18px;">Information Details</h5>
                             <div class="row">
@@ -174,7 +196,7 @@ $profile_img = ($user['profile_pic'] != 'default.png') ? "../" . $user['profile_
                     </div>
                 </div>
 
-                <!-- --- User Posts Timeline Section --- -->
+                <!-- --- User Posts Timeline --- -->
                 <div class="row justify-content-center">
                     <div class="col-md-10">
                         <h4 class="section-title"><i class="bi bi-grid-3x3-gap-fill text-primary"></i> <?php echo $is_my_profile ? "My Timeline" : $user['full_name']."'s Posts"; ?></h4>
@@ -235,7 +257,6 @@ $profile_img = ($user['profile_pic'] != 'default.png') ? "../" . $user['profile_
                         <?php endif; ?>
                     </div>
                 </div>
-                <!-- Timeline End -->
 
             </div>
         </div>

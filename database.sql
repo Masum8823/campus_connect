@@ -271,3 +271,45 @@ CREATE TABLE IF NOT EXISTS alumni_jobs (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (alumni_id) REFERENCES users(id) ON DELETE CASCADE
 );
+
+ALTER TABLE alumni_jobs 
+ADD COLUMN vacancy INT DEFAULT 1 AFTER job_type,
+ADD COLUMN target_dept VARCHAR(50) AFTER location;
+
+ALTER TABLE alumni_stories ADD COLUMN is_edited TINYINT(1) DEFAULT 0 AFTER first_salary;
+
+--- DB for Message System
+
+--msg request table
+CREATE TABLE IF NOT EXISTS message_requests (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    sender_id INT,
+    receiver_id INT,
+    status ENUM('pending', 'accepted', 'declined', 'blocked') DEFAULT 'pending',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY unique_request (sender_id, receiver_id),
+    FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (receiver_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+--converstation table (after accepting the request)
+CREATE TABLE IF NOT EXISTS conversations (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user1_id INT,
+    user2_id INT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user1_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (user2_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+--msg store table
+CREATE TABLE IF NOT EXISTS private_messages (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    conversation_id INT,
+    sender_id INT,
+    message_text TEXT,
+    is_read TINYINT(1) DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE,
+    FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE
+);
