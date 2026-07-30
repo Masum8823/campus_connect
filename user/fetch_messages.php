@@ -13,7 +13,10 @@ if(isset($_GET['conv_id']) && isset($_SESSION['user_id'])){
         $class = $is_my_msg ? 'sent' : 'received';
         $edited_label = ($msg['is_edited'] == 1) ? ' <small style="font-size:9px; opacity:0.7;">(edited)</small>' : '';
         
+        $time = date('h:i A', strtotime($msg['created_at']));
+        
         echo '<div class="message-wrapper d-flex flex-column ' . ($is_my_msg ? 'align-items-end' : 'align-items-start') . '">';
+        
         echo '  <div class="message ' . $class . '" data-id="' . $msg['id'] . '">';
         echo        htmlspecialchars($msg['message_text']) . $edited_label;
         
@@ -23,8 +26,10 @@ if(isset($_GET['conv_id']) && isset($_SESSION['user_id'])){
             echo '      <i class="bi bi-trash" onclick="deleteMessage(' . $msg['id'] . ')"></i>';
             echo '  </div>';
         }
-        
         echo '  </div>';
+        
+        echo '  <small class="msg-time text-muted">' . $time . '</small>';
+        
         echo '</div>';
     }
 }

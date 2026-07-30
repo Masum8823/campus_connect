@@ -46,6 +46,16 @@ $conversation_id = $conv['id'];
             font-size: 12px; 
             cursor: pointer; 
         }
+
+        .msg-time {
+            font-size: 10px;
+            margin-bottom: 10px;
+            padding: 0 8px;
+            opacity: 0.8;
+        }
+        .sent + .msg-time {
+            text-align: right;
+        }
         .message:hover .msg-actions { display: block; }
         .sent .msg-actions { right: 0; }
         .received .msg-actions { left: 0; }
