@@ -139,6 +139,19 @@ $profile_img = ($user['profile_pic'] != 'default.png') ? "../" . $user['profile_
                                                 <i class="bi bi-chat-dots"></i> <?php echo ($_SESSION['role'] == 'teacher') ? 'Contact Student' : 'Request to Message'; ?>
                                             </a>
                                         <?php endif; ?>
+                                        <?php 
+                                        
+                                        $i_blocked_him = mysqli_num_rows(mysqli_query($conn, "SELECT * FROM message_blocks WHERE blocker_id='$current_user_id' AND blocked_id='$view_user_id'")) > 0;
+                                        ?>
+
+                                        <?php if(!$is_my_profile): ?>
+                                            <div class="mt-2">
+                                                <a href="toggle_block.php?id=<?php echo $view_user_id; ?>" class="btn <?php echo $i_blocked_him ? 'btn-outline-danger' : 'btn-link text-danger'; ?> w-100 rounded-pill btn-sm fw-bold text-decoration-none">
+                                                    <i class="bi <?php echo $i_blocked_him ? 'bi-person-check' : 'bi-slash-circle'; ?>"></i> 
+                                                    <?php echo $i_blocked_him ? 'Unblock User' : 'Block User'; ?>
+                                                </a>
+                                            </div>
+                                        <?php endif; ?>
                                     </div>
                                 <?php endif; ?>
                             </div>

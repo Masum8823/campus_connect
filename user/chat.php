@@ -14,6 +14,9 @@ $other_user = mysqli_fetch_assoc(mysqli_query($conn, "SELECT * FROM users WHERE 
 $conv_query = mysqli_query($conn, "SELECT id FROM conversations WHERE (user1_id='$current_user_id' AND user2_id='$other_user_id') OR (user1_id='$other_user_id' AND user2_id='$current_user_id')");
 $conv = mysqli_fetch_assoc($conv_query);
 $conversation_id = $conv['id'];
+
+$block_check = mysqli_query($conn, "SELECT * FROM message_blocks WHERE (blocker_id='$current_user_id' AND blocked_id='$other_user_id') OR (blocker_id='$other_user_id' AND blocked_id='$current_user_id')");
+$is_chat_blocked = mysqli_num_rows($block_check) > 0;
 ?>
 
 <!DOCTYPE html>
@@ -46,16 +49,8 @@ $conversation_id = $conv['id'];
             font-size: 12px; 
             cursor: pointer; 
         }
-
-        .msg-time {
-            font-size: 10px;
-            margin-bottom: 10px;
-            padding: 0 8px;
-            opacity: 0.8;
-        }
-        .sent + .msg-time {
-            text-align: right;
-        }
+        .msg-time { font-size: 10px; margin-bottom: 10px; padding: 0 8px; opacity: 0.8; }
+        .sent + .msg-time { text-align: right; }
         .message:hover .msg-actions { display: block; }
         .sent .msg-actions { right: 0; }
         .received .msg-actions { left: 0; }
@@ -67,82 +62,86 @@ $conversation_id = $conv['id'];
         <div class="chat-container">
             <!-- Header -->
             <div class="chat-header">
-                <a href="dashboard.php" class="text-white me-3 fs-4"><i class="bi bi-arrow-left"></i></a>
+                <a href="messages.php" class="text-white me-3 fs-4"><i class="bi bi-arrow-left"></i></a>
                 <?php $img = ($other_user['profile_pic'] != 'default.png') ? "../" . $other_user['profile_pic'] : "https://ui-avatars.com/api/?name=".urlencode($other_user['full_name']); ?>
                 <img src="<?php echo $img; ?>" class="rounded-circle me-3" width="40" height="40" style="object-fit: cover;">
                 <h6 class="mb-0 fw-bold"><?php echo $other_user['full_name']; ?></h6>
             </div>
 
             <!-- Messages Window -->
-            <div class="chat-box" id="chatBox">
-            </div>
+            <div class="chat-box" id="chatBox"></div>
 
             <!-- Footer Input -->
             <div class="chat-footer">
-                <form id="chatForm" class="d-flex">
-                    <input type="hidden" id="conv_id" value="<?php echo $conversation_id; ?>">
-                    <input type="text" id="message_text" class="form-control msg-input me-2" placeholder="Type a message..." autocomplete="off">
-                    <button type="submit" class="btn btn-primary rounded-circle"><i class="bi bi-send-fill"></i></button>
-                </form>
+                <?php if($is_chat_blocked): ?>
+                    <div class="alert alert-secondary mb-0 py-2 text-center small fw-bold">
+                        <i class="bi bi-slash-circle me-1"></i> You cannot reply to this conversation.
+                    </div>
+                <?php else: ?>
+                    <form id="chatForm" class="d-flex">
+                        <input type="hidden" id="conv_id" value="<?php echo $conversation_id; ?>">
+                        <input type="text" id="message_text" class="form-control msg-input me-2" placeholder="Type a message..." autocomplete="off">
+                        <button type="submit" class="btn btn-primary rounded-circle"><i class="bi bi-send-fill"></i></button>
+                    </form>
+                <?php endif; ?>
             </div>
         </div>
     </div>
 
     <script>
-    const chatBox = document.getElementById('chatBox');
-    const chatForm = document.getElementById('chatForm');
-    const convId = document.getElementById('conv_id').value;
+        const chatBox = document.getElementById('chatBox');
+        const chatForm = document.getElementById('chatForm');
+        const convId = document.getElementById('conv_id') ? document.getElementById('conv_id').value : null;
 
-    chatForm.onsubmit = (e) => {
-        e.preventDefault();
-        const text = document.getElementById('message_text').value;
-        if(text.trim() == "") return;
+        if(chatForm) {
+            chatForm.onsubmit = (e) => {
+                e.preventDefault();
+                const text = document.getElementById('message_text').value;
+                if(text.trim() == "") return;
 
-        fetch('send_message.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: `conv_id=${convId}&message=${encodeURIComponent(text)}`
-        }).then(() => {
-            document.getElementById('message_text').value = "";
-            loadMessages(true); 
-        });
-    };
-
-    function loadMessages(forceScroll = false) {
-        const isAtBottom = chatBox.scrollHeight - chatBox.clientHeight <= chatBox.scrollTop + 50;
-
-        fetch(`fetch_messages.php?conv_id=${convId}`)
-            .then(res => res.text())
-            .then(data => {
-                chatBox.innerHTML = data;
-
-                if (isAtBottom || forceScroll) {
-                    chatBox.scrollTop = chatBox.scrollHeight;
-                }
-            });
-    }
-
-    function deleteMessage(msgId) {
-        if(confirm('Delete this message?')){
-            fetch(`delete_message.php?id=${msgId}`)
-                .then(() => loadMessages());
+                fetch('send_message.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `conv_id=${convId}&message=${encodeURIComponent(text)}`
+                }).then(() => {
+                    document.getElementById('message_text').value = "";
+                    loadMessages(true); 
+                });
+            };
         }
-    }
 
-    function editMessage(msgId, oldText) {
-        const newText = prompt("Edit your message:", oldText);
-        if(newText != null && newText.trim() != ""){
-            fetch('edit_message.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: `msg_id=${msgId}&message=${encodeURIComponent(newText)}`
-            }).then(() => loadMessages());
+        function loadMessages(forceScroll = false) {
+            const isAtBottom = chatBox.scrollHeight - chatBox.clientHeight <= chatBox.scrollTop + 50;
+
+            fetch(`fetch_messages.php?conv_id=<?php echo $conversation_id; ?>`)
+                .then(res => res.text())
+                .then(data => {
+                    chatBox.innerHTML = data;
+                    if (isAtBottom || forceScroll) {
+                        chatBox.scrollTop = chatBox.scrollHeight;
+                    }
+                });
         }
-    }
 
-    setInterval(() => loadMessages(false), 2000);
-    
-    window.onload = () => loadMessages(true);
-</script>
+        function deleteMessage(msgId) {
+            if(confirm('Delete this message?')){
+                fetch(`delete_message.php?id=${msgId}`).then(() => loadMessages());
+            }
+        }
+
+        function editMessage(msgId, oldText) {
+            const newText = prompt("Edit your message:", oldText);
+            if(newText != null && newText.trim() != ""){
+                fetch('edit_message.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `msg_id=${msgId}&message=${encodeURIComponent(newText)}`
+                }).then(() => loadMessages());
+            }
+        }
+
+        setInterval(() => loadMessages(false), 2000);
+        window.onload = () => loadMessages(true);
+    </script>
 </body>
 </html>
