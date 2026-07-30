@@ -79,53 +79,60 @@ $conversation_id = $conv['id'];
     </div>
 
     <script>
-        const chatBox = document.getElementById('chatBox');
-        const chatForm = document.getElementById('chatForm');
-        const convId = document.getElementById('conv_id').value;
+    const chatBox = document.getElementById('chatBox');
+    const chatForm = document.getElementById('chatForm');
+    const convId = document.getElementById('conv_id').value;
 
-        chatForm.onsubmit = (e) => {
-            e.preventDefault();
-            const text = document.getElementById('message_text').value;
-            if(text.trim() == "") return;
+    chatForm.onsubmit = (e) => {
+        e.preventDefault();
+        const text = document.getElementById('message_text').value;
+        if(text.trim() == "") return;
 
-            fetch('send_message.php', {
+        fetch('send_message.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `conv_id=${convId}&message=${encodeURIComponent(text)}`
+        }).then(() => {
+            document.getElementById('message_text').value = "";
+            loadMessages(true); 
+        });
+    };
+
+    function loadMessages(forceScroll = false) {
+        const isAtBottom = chatBox.scrollHeight - chatBox.clientHeight <= chatBox.scrollTop + 50;
+
+        fetch(`fetch_messages.php?conv_id=${convId}`)
+            .then(res => res.text())
+            .then(data => {
+                chatBox.innerHTML = data;
+
+                if (isAtBottom || forceScroll) {
+                    chatBox.scrollTop = chatBox.scrollHeight;
+                }
+            });
+    }
+
+    function deleteMessage(msgId) {
+        if(confirm('Delete this message?')){
+            fetch(`delete_message.php?id=${msgId}`)
+                .then(() => loadMessages());
+        }
+    }
+
+    function editMessage(msgId, oldText) {
+        const newText = prompt("Edit your message:", oldText);
+        if(newText != null && newText.trim() != ""){
+            fetch('edit_message.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: `conv_id=${convId}&message=${encodeURIComponent(text)}`
-            }).then(() => {
-                document.getElementById('message_text').value = "";
-                loadMessages(); 
-            });
-        };
-
-        function loadMessages() {
-            fetch(`fetch_messages.php?conv_id=${convId}`)
-                .then(res => res.text())
-                .then(data => {
-                    chatBox.innerHTML = data;
-                    chatBox.scrollTop = chatBox.scrollHeight; 
-                });
+                body: `msg_id=${msgId}&message=${encodeURIComponent(newText)}`
+            }).then(() => loadMessages());
         }
-        function deleteMessage(msgId) {
-                if(confirm('Delete this message?')){
-                    fetch(`delete_message.php?id=${msgId}`)
-                        .then(() => loadMessages());
-                }
-            }
+    }
 
-        function editMessage(msgId, oldText) {
-                const newText = prompt("Edit your message:", oldText);
-                if(newText != null && newText.trim() != ""){
-                    fetch('edit_message.php', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                        body: `msg_id=${msgId}&message=${encodeURIComponent(newText)}`
-                    }).then(() => loadMessages());
-                }
-            }
-
-        setInterval(loadMessages, 2000);
-        loadMessages();
-    </script>
+    setInterval(() => loadMessages(false), 2000);
+    
+    window.onload = () => loadMessages(true);
+</script>
 </body>
 </html>
