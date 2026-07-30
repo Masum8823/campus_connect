@@ -33,6 +33,22 @@ $conversation_id = $conv['id'];
         .received { align-self: flex-start; background: #e4e6eb; color: #050505; border-bottom-left-radius: 2px; }
         .chat-footer { padding: 15px; background: white; border-top: 1px solid #eee; }
         .msg-input { border-radius: 25px; border: 1px solid #ddd; padding: 10px 20px; background: #f0f2f5; }
+        .message { position: relative; }
+        .msg-actions { 
+            display: none; 
+            position: absolute; 
+            top: -20px; 
+            right: 0; 
+            background: rgba(0,0,0,0.6); 
+            color: white; 
+            padding: 2px 8px; 
+            border-radius: 10px; 
+            font-size: 12px; 
+            cursor: pointer; 
+        }
+        .message:hover .msg-actions { display: block; }
+        .sent .msg-actions { right: 0; }
+        .received .msg-actions { left: 0; }
     </style>
 </head>
 <body>
@@ -90,6 +106,23 @@ $conversation_id = $conv['id'];
                     chatBox.scrollTop = chatBox.scrollHeight; 
                 });
         }
+        function deleteMessage(msgId) {
+                if(confirm('Delete this message?')){
+                    fetch(`delete_message.php?id=${msgId}`)
+                        .then(() => loadMessages());
+                }
+            }
+
+        function editMessage(msgId, oldText) {
+                const newText = prompt("Edit your message:", oldText);
+                if(newText != null && newText.trim() != ""){
+                    fetch('edit_message.php', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: `msg_id=${msgId}&message=${encodeURIComponent(newText)}`
+                    }).then(() => loadMessages());
+                }
+            }
 
         setInterval(loadMessages, 2000);
         loadMessages();
