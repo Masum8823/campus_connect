@@ -1,6 +1,5 @@
 <?php
 include '../config.php';
-session_start();
 
 // Security: If identity is not verified, redirect back
 if(!isset($_SESSION['reset_user_id'])){

@@ -1,6 +1,5 @@
 <?php
 include '../config.php';
-session_start();
 
 // Security Check: Only Teachers/Admins can edit
 if(!isset($_SESSION['user_id']) || $_SESSION['role'] == 'student' || !isset($_GET['id'])){

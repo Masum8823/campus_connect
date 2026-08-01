@@ -1,6 +1,5 @@
 <?php
 include '../config.php';
-session_start();
 
 if(!isset($_SESSION['temp_email'])){
     header("Location: register.php");

@@ -1,6 +1,5 @@
 <?php
 include '../config.php';
-session_start();
 
 if(isset($_GET['conv_id']) && isset($_SESSION['user_id'])){
     $conv_id = $_GET['conv_id'];

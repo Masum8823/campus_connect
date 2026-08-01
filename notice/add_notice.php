@@ -1,6 +1,5 @@
 <?php
 include '../config.php';
-session_start();
 
 // Security: Only Teachers/Admins
 if (!isset($_SESSION['user_id']) || ($_SESSION['role'] != 'teacher' && $_SESSION['role'] != 'admin')) {

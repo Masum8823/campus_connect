@@ -1,6 +1,5 @@
 <?php
 include '../config.php';
-session_start();
 if(isset($_POST['msg_id']) && isset($_SESSION['user_id'])){
     $id = $_POST['msg_id'];
     $u_id = $_SESSION['user_id'];

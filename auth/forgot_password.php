@@ -7,7 +7,6 @@ require 'PHPMailer/Exception.php';
 require 'PHPMailer/PHPMailer.php';
 require 'PHPMailer/SMTP.php';
 
-session_start();
 
 if(isset($_POST['verify'])){
     $email = mysqli_real_escape_string($conn, $_POST['email']);

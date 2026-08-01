@@ -1,6 +1,5 @@
 <?php
 include '../config.php';
-session_start();
 
 if(isset($_GET['id']) && isset($_SESSION['user_id'])){
     $job_id = $_GET['id'];
