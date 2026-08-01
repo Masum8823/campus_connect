@@ -6,18 +6,29 @@ if(isset($_POST['conv_id']) && isset($_SESSION['user_id'])){
     $conv_id = $_POST['conv_id'];
     $sender_id = $_SESSION['user_id'];
     $message = mysqli_real_escape_string($conn, $_POST['message']);
+    
+    $file_path = NULL;
+    $msg_type = 'text';
 
-    $conv_info = mysqli_fetch_assoc(mysqli_query($conn, "SELECT user1_id, user2_id FROM conversations WHERE id='$conv_id'"));
-    $receiver_id = ($conv_info['user1_id'] == $sender_id) ? $conv_info['user2_id'] : $conv_info['user1_id'];
-
-    $block_check = mysqli_query($conn, "SELECT * FROM message_blocks WHERE (blocker_id='$sender_id' AND blocked_id='$receiver_id') OR (blocker_id='$receiver_id' AND blocked_id='$sender_id')");
-
-    if(mysqli_num_rows($block_check) > 0){
-        exit();
+    // ১. ফাইল আপলোড হ্যান্ডলিং
+    if(isset($_FILES['chat_file']) && $_FILES['chat_file']['error'] == 0){
+        $filename = time() . "_" . $_FILES['chat_file']['name'];
+        $target = "../uploads/chat/" . $filename;
+        $file_ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+        
+        if(move_uploaded_file($_FILES['chat_file']['tmp_name'], $target)){
+            $file_path = "uploads/chat/" . $filename;
+            // টাইপ নির্ধারণ
+            $image_exts = ['jpg', 'jpeg', 'png', 'gif'];
+            $msg_type = in_array($file_ext, $image_exts) ? 'image' : 'file';
+        }
     }
 
-    if(!empty($message)){
-        mysqli_query($conn, "INSERT INTO private_messages (conversation_id, sender_id, message_text) VALUES ('$conv_id', '$sender_id', '$message')");
+    // ২. ডাটাবেসে ইনসার্ট
+    if(!empty($message) || $file_path){
+        $query = "INSERT INTO private_messages (conversation_id, sender_id, message_text, message_type, file_path) 
+                  VALUES ('$conv_id', '$sender_id', '$message', '$msg_type', " . ($file_path ? "'$file_path'" : "NULL") . ")";
+        mysqli_query($conn, $query);
     }
 }
 ?>
