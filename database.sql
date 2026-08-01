@@ -370,3 +370,5 @@ ADD COLUMN message_type ENUM('text', 'file', 'image') DEFAULT 'text' AFTER messa
 ADD COLUMN file_path VARCHAR(255) NULL AFTER message_type;
 
 ALTER TABLE private_messages ADD COLUMN reply_to INT NULL AFTER file_path;
+
+ALTER TABLE users ADD COLUMN last_activity TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
