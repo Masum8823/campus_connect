@@ -364,3 +364,7 @@ CREATE TABLE IF NOT EXISTS private_messages (
     FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE,
     FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE
 );
+
+ALTER TABLE private_messages 
+ADD COLUMN message_type ENUM('text', 'file', 'image') DEFAULT 'text' AFTER message_text,
+ADD COLUMN file_path VARCHAR(255) NULL AFTER message_type;
