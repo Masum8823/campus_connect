@@ -25,21 +25,42 @@ $is_chat_blocked = mysqli_num_rows($block_check) > 0;
     <title>Chat with <?php echo $other_user['full_name']; ?></title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         body { background-color: #f0f2f5; font-family: 'Plus Jakarta Sans', sans-serif; }
         .chat-container { max-width: 600px; margin: 20px auto; background: white; border-radius: 20px; overflow: hidden; display: flex; flex-direction: column; height: 85vh; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
         .chat-header { padding: 15px 20px; background: #0d6efd; color: white; display: flex; align-items: center; }
         .chat-box { flex-grow: 1; padding: 20px; overflow-y: auto; background: #f9f9f9; display: flex; flex-direction: column; }
-        .message { max-width: 75%; padding: 10px 15px; border-radius: 18px; margin-bottom: 5px; font-size: 14px; position: relative; }
+        
+        /* Message Bubbles */
+        .message-wrapper { margin-bottom: 15px; position: relative; }
+        .message { max-width: 80%; padding: 10px 15px; border-radius: 18px; font-size: 14px; position: relative; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .sent { align-self: flex-end; background: #0d6efd; color: white; border-bottom-right-radius: 2px; }
-        .received { align-self: flex-start; background: #e4e6eb; color: #050505; border-bottom-left-radius: 2px; }
-        .chat-img { max-width: 100%; border-radius: 10px; cursor: pointer; }
-        .file-attachment { display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; background: rgba(255,255,255,0.2); padding: 5px 10px; border-radius: 10px; }
-        .received .file-attachment { background: rgba(0,0,0,0.05); }
-        .chat-footer { padding: 15px; background: white; border-top: 1px solid #eee; }
-        .msg-input { border-radius: 25px; border: none; padding: 10px 20px; background: #f0f2f5; }
-        .msg-time { font-size: 10px; margin-bottom: 10px; opacity: 0.7; }
-        .sent + .msg-time { text-align: right; }
+        .received { align-self: flex-start; background: white; color: #050505; border-bottom-left-radius: 2px; border: 1px solid #eee; }
+        
+        /* Reply Preview inside Bubble */
+        .reply-preview-in-chat { background: rgba(0,0,0,0.05); padding: 5px 10px; border-radius: 10px; font-size: 12px; border-left: 3px solid #0d6efd; margin-bottom: 8px; color: #555; }
+        .sent .reply-preview-in-chat { background: rgba(255,255,255,0.2); color: #fff; border-left-color: white; }
+
+        .chat-img { max-width: 100%; border-radius: 12px; cursor: pointer; }
+        .file-attachment { display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; background: rgba(0,0,0,0.05); padding: 8px 12px; border-radius: 12px; }
+        
+        .chat-footer { padding: 0; background: white; border-top: 1px solid #eee; }
+        .msg-input-container { padding: 15px; display: flex; align-items: center; }
+        .msg-input { border-radius: 25px; border: none; padding: 10px 20px; background: #f0f2f5; flex-grow: 1; }
+
+        /* Action Icons (Reply/Edit/Delete) */
+        .msg-actions { display: none; position: absolute; top: -25px; background: white; box-shadow: 0 2px 10px rgba(0,0,0,0.1); border-radius: 10px; padding: 2px 8px; z-index: 10; gap: 10px; }
+        .message-wrapper:hover .msg-actions { display: flex; }
+        .sent .msg-actions { right: 0; }
+        .received .msg-actions { left: 0; }
+        .msg-actions i { cursor: pointer; font-size: 14px; color: #666; transition: 0.2s; }
+        .msg-actions i:hover { color: #0d6efd; }
+
+        .msg-time { font-size: 10px; margin-top: 4px; opacity: 0.7; }
+        
+        /* New Reply UI on Footer */
+        #reply_container { transition: 0.3s; }
     </style>
 </head>
 <body>
@@ -55,21 +76,34 @@ $is_chat_blocked = mysqli_num_rows($block_check) > 0;
 
             <div class="chat-footer">
                 <?php if($is_chat_blocked): ?>
-                    <div class="alert alert-secondary mb-0 py-2 text-center small fw-bold"><i class="bi bi-slash-circle"></i> Chat Blocked</div>
+                    <div class="alert alert-secondary mb-0 py-3 text-center small fw-bold"><i class="bi bi-slash-circle"></i> Chat Blocked</div>
                 <?php else: ?>
-                    <form id="chatForm" class="d-flex align-items-center">
-                        <input type="hidden" id="conv_id" value="<?php echo $conversation_id; ?>">
-                        
-                        <!-- File Input (Hidden) -->
-                        <input type="file" id="msg_file" style="display:none" accept=".jpg,.jpeg,.png,.pdf,.docx,.zip">
-                        <button type="button" class="btn btn-light text-primary rounded-circle me-2" onclick="document.getElementById('msg_file').click()">
-                            <i class="bi bi-paperclip fs-5"></i>
-                        </button>
+                    
+                    <!-- NEW: Reply Preview Container -->
+                    <div id="reply_container" class="p-2 border-top bg-light d-none" style="border-radius: 15px 15px 0 0;">
+                        <div class="d-flex justify-content-between align-items-center px-2">
+                            <div class="small text-muted border-start border-primary border-4 ps-2 overflow-hidden" style="max-height: 40px;">
+                                Replying to: <span id="reply_text_preview" class="fw-bold"></span>
+                            </div>
+                            <button type="button" class="btn-close" style="font-size: 10px;" onclick="cancelReply()"></button>
+                        </div>
+                    </div>
 
-                        <input type="text" id="message_text" class="form-control msg-input me-2" placeholder="Type a message..." autocomplete="off">
-                        <button type="submit" class="btn btn-primary rounded-circle"><i class="bi bi-send-fill"></i></button>
-                    </form>
-                    <div id="file_preview" class="small text-muted mt-2 ps-5 d-none"></div>
+                    <div class="msg-input-container">
+                        <form id="chatForm" class="d-flex align-items-center w-100" enctype="multipart/form-data">
+                            <input type="hidden" id="conv_id" value="<?php echo $conversation_id; ?>">
+                            <input type="hidden" id="reply_to_id" value="">
+                            
+                            <input type="file" id="msg_file" style="display:none" accept="image/*,.pdf,.docx,.zip">
+                            <button type="button" class="btn btn-light text-primary rounded-circle me-2" onclick="document.getElementById('msg_file').click()">
+                                <i class="bi bi-paperclip fs-5"></i>
+                            </button>
+
+                            <input type="text" id="message_text" class="form-control msg-input me-2" placeholder="Type a message..." autocomplete="off">
+                            <button type="submit" class="btn btn-primary rounded-circle shadow-sm"><i class="bi bi-send-fill"></i></button>
+                        </form>
+                    </div>
+                    <div id="file_preview" class="small text-muted pb-2 ps-5 d-none"></div>
                 <?php endif; ?>
             </div>
         </div>
@@ -80,14 +114,32 @@ $is_chat_blocked = mysqli_num_rows($block_check) > 0;
         const chatForm = document.getElementById('chatForm');
         const fileInput = document.getElementById('msg_file');
         const filePreview = document.getElementById('file_preview');
+        const replyContainer = document.getElementById('reply_container');
+        let currentReplyId = null;
 
-        // ফাইল সিলেক্ট করলে প্রিভিউ দেখানো
+        // ফাইল সিলেক্ট চেক
         fileInput.onchange = () => {
             if(fileInput.files.length > 0) {
-                filePreview.innerHTML = `<i class="bi bi-file-earmark-check"></i> ${fileInput.files[0].name} selected`;
+                filePreview.innerHTML = `<i class="bi bi-file-earmark-check"></i> ${fileInput.files[0].name}`;
                 filePreview.classList.remove('d-none');
             }
         };
+
+        // রিপ্লাই সেটআপ করা (এটি fetch_messages.php থেকে কল হবে)
+        function setupReply(id, text) {
+            currentReplyId = id;
+            document.getElementById('reply_to_id').value = id;
+            document.getElementById('reply_text_preview').innerText = text;
+            replyContainer.classList.remove('d-none');
+            document.getElementById('message_text').focus();
+        }
+
+        // রিপ্লাই ক্যানসেল করা
+        function cancelReply() {
+            currentReplyId = null;
+            document.getElementById('reply_to_id').value = "";
+            replyContainer.classList.add('d-none');
+        }
 
         chatForm.onsubmit = (e) => {
             e.preventDefault();
@@ -96,19 +148,18 @@ $is_chat_blocked = mysqli_num_rows($block_check) > 0;
             
             if(text.trim() == "" && fileInput.files.length == 0) return;
 
-            // FormData ব্যবহার করছি ফাইল পাঠানোর জন্য
             const formData = new FormData();
             formData.append('conv_id', convId);
             formData.append('message', text);
-            if(fileInput.files.length > 0) {
-                formData.append('chat_file', fileInput.files[0]);
-            }
+            if(currentReplyId) formData.append('reply_to', currentReplyId);
+            if(fileInput.files.length > 0) formData.append('chat_file', fileInput.files[0]);
 
             fetch('send_message.php', {
                 method: 'POST',
                 body: formData
             }).then(() => {
                 chatForm.reset();
+                cancelReply();
                 filePreview.classList.add('d-none');
                 loadMessages(true);
             });
@@ -122,6 +173,25 @@ $is_chat_blocked = mysqli_num_rows($block_check) > 0;
                     chatBox.innerHTML = data;
                     if (isAtBottom || forceScroll) chatBox.scrollTop = chatBox.scrollHeight;
                 });
+        }
+
+        // মেসেজ ডিলিট
+        function deleteMessage(msgId) {
+            if(confirm('Delete this message?')){
+                fetch(`delete_message.php?id=${msgId}`).then(() => loadMessages());
+            }
+        }
+
+        // মেসেজ এডিট
+        function editMessage(msgId, oldText) {
+            const newText = prompt("Edit your message:", oldText);
+            if(newText != null && newText.trim() != ""){
+                fetch('edit_message.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `msg_id=${msgId}&message=${encodeURIComponent(newText)}`
+                }).then(() => loadMessages());
+            }
         }
 
         setInterval(() => loadMessages(false), 2000);
