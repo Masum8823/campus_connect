@@ -393,3 +393,31 @@ ON DELETE CASCADE;
 
 ALTER TABLE academic_files 
 MODIFY COLUMN category ENUM('class_routine', 'exam_routine', 'course_material', 'course_outline') NOT NULL;
+
+-- ১. ইভেন্ট টেবিল
+CREATE TABLE IF NOT EXISTS events (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    organizer_id INT, -- কে ইভেন্টটি দিচ্ছে (Teacher/Admin)
+    title VARCHAR(255) NOT NULL,
+    category ENUM('Seminar', 'Workshop', 'Fest', 'Sports', 'Reunion', 'Others') DEFAULT 'Seminar',
+    description TEXT,
+    event_date DATE,
+    event_time TIME,
+    location VARCHAR(255),
+    banner_image VARCHAR(255) DEFAULT 'default_event.png',
+    seat_limit INT DEFAULT 0, -- ০ মানে আনলিমিটেড
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (organizer_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- ২. ইভেন্ট রেজিস্ট্রেশন/RSVP টেবিল
+CREATE TABLE IF NOT EXISTS event_participations (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    event_id INT,
+    user_id INT,
+    status ENUM('going', 'interested') NOT NULL,
+    registered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY unique_participation (event_id, user_id),
+    FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
