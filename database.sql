@@ -374,3 +374,19 @@ ALTER TABLE private_messages ADD COLUMN reply_to INT NULL AFTER file_path;
 ALTER TABLE users ADD COLUMN last_activity TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
 
 ALTER TABLE users ADD COLUMN is_private TINYINT(1) DEFAULT 0; -- 0 = Public, 1 = Private
+
+-- ১. প্রথমে মেসেজ টেবিল থেকে কনভারসেশন আইডি রিলেশন আপডেট করা
+ALTER TABLE private_messages DROP FOREIGN KEY private_messages_ibfk_1;
+
+ALTER TABLE private_messages 
+ADD CONSTRAINT private_messages_ibfk_1 
+FOREIGN KEY (conversation_id) REFERENCES conversations(id) 
+ON DELETE CASCADE;
+
+-- ২. একইভাবে মেসেজ টেবিল থেকে সেন্ডার আইডি রিলেশন (বিকল্প সুরক্ষা)
+ALTER TABLE private_messages DROP FOREIGN KEY private_messages_ibfk_2;
+
+ALTER TABLE private_messages 
+ADD CONSTRAINT private_messages_ibfk_2 
+FOREIGN KEY (sender_id) REFERENCES users(id) 
+ON DELETE CASCADE;
