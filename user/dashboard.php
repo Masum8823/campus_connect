@@ -126,6 +126,9 @@ $all_posts = mysqli_query($conn, $posts_query);
                 <a href="../admin/index.php" class="nav-link nav-admin shadow-sm mb-3"><i class="bi bi-shield-lock-fill text-warning"></i> <span>ADMIN CONTROL</span></a>
             <?php endif; ?>
             <a href="dashboard.php" class="nav-link active"><i class="bi bi-house-door-fill"></i> <span>Campus Feed</span></a>
+            <a href="campus_members.php" class="nav-link">
+                <i class="bi bi-person-lines-fill text-primary"></i> <span>Campus Members</span>
+            </a>
             <a href="../notice/view_notice_list.php" class="nav-link"><i class="bi bi-megaphone text-warning"></i> <span>Notices</span></a>
             <a href="../lost_found/index.php" class="nav-link"><i class="bi bi-search text-info"></i> <span>Lost & Found</span></a>
             <a href="../academic/index.php" class="nav-link"><i class="bi bi-mortarboard text-success"></i> <span>Academic Hub</span></a>
