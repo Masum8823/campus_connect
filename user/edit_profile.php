@@ -35,7 +35,8 @@ if(isset($_POST['update_profile'])){
         echo "<script>alert('Profile Updated!'); window.location='profile.php';</script>";
     }
 }
-
+$is_private = $_POST['is_private'];
+// কুয়েরির ভেতর is_private='$is_private' যোগ করো
 // বর্তমান ডাটা আনা
 $user = mysqli_fetch_assoc(mysqli_query($conn, "SELECT * FROM users WHERE id='$user_id'"));
 ?>
@@ -81,6 +82,14 @@ $user = mysqli_fetch_assoc(mysqli_query($conn, "SELECT * FROM users WHERE id='$u
             <div class="mb-4">
                 <label class="small fw-bold">LinkedIn URL</label>
                 <input type="url" name="linkedin_url" class="form-control" value="<?php echo $user['linkedin_url']; ?>">
+            </div>
+            <div class="mb-4">
+            <label class="small fw-bold">Profile Visibility</label>
+            <select name="is_private" class="form-select premium-input">
+                <option value="0" <?php echo ($user['is_private'] == 0) ? 'selected' : ''; ?>>Public (Everyone can see info)</option>
+                <option value="1" <?php echo ($user['is_private'] == 1) ? 'selected' : ''; ?>>Private (Only connections can see info)</option>
+            </select>
+            <small class="text-muted">Setting your profile to private will hide your details and posts from strangers.</small>
             </div>
             <button name="update_profile" class="btn btn-primary px-5">Save Changes</button>
             <a href="profile.php" class="btn btn-link">Cancel</a>

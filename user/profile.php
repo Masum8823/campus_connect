@@ -1,5 +1,6 @@
 <?php
 include '../config.php';
+// config.php তে সেশন স্টার্ট করা আছে তাই এখানে আর দরকার নেই
 
 if(!isset($_SESSION['user_id'])){
     header("Location: ../auth/login.php");
@@ -22,7 +23,7 @@ if(!$user){
     exit();
 }
 
-// --- ৩. কানেকশন স্ট্যাটাস চেক (Network) ---
+// ৩. কানেকশন স্ট্যাটাস চেক
 $conn_status_query = mysqli_query($conn, "SELECT * FROM connections WHERE (sender_id='$current_user_id' AND receiver_id='$view_user_id') OR (sender_id='$view_user_id' AND receiver_id='$current_user_id')");
 $conn_data = mysqli_fetch_assoc($conn_status_query);
 $is_connected = false;
@@ -33,10 +34,9 @@ if($conn_data){
     else $is_pending_conn = true;
 }
 
-// --- ৪. মেসেজ রিকোয়েস্ট লজিক ---
+// ৪. মেসেজ রিকোয়েস্ট লজিক
 $msg_req_query = mysqli_query($conn, "SELECT * FROM message_requests WHERE (sender_id='$current_user_id' AND receiver_id='$view_user_id') OR (sender_id='$view_user_id' AND receiver_id='$current_user_id')");
 $msg_req_data = mysqli_fetch_assoc($msg_req_query);
-
 $chat_status = "none";
 $msg_req_sender = null;
 if($msg_req_data) {
@@ -44,17 +44,17 @@ if($msg_req_data) {
     $msg_req_sender = $msg_req_data['sender_id'];
 }
 
-// --- ৫. উন্নত ব্লক চেক (Advanced Block Logic) ---
-// আমি কি তাকে ব্লক করেছি?
+// ৫. ব্লক চেক
 $i_blocked_query = mysqli_query($conn, "SELECT * FROM message_blocks WHERE blocker_id='$current_user_id' AND blocked_id='$view_user_id'");
 $i_blocked_him = mysqli_num_rows($i_blocked_query) > 0;
-
-// সে কি আমাকে ব্লক করেছে?
 $he_blocked_query = mysqli_query($conn, "SELECT * FROM message_blocks WHERE blocker_id='$view_user_id' AND blocked_id='$current_user_id'");
 $he_blocked_me = mysqli_num_rows($he_blocked_query) > 0;
 
+// --- ৬. প্রাইভেসী লজিক (Privacy Logic) ---
+// তথ্য দেখাবে যদি: নিজের প্রোফাইল হয় অথবা পাবলিক প্রোফাইল হয় অথবা অলরেডি কানেক্টেড থাকে
+$show_details = ($is_my_profile || $user['is_private'] == 0 || $is_connected);
 
-// ৬. ইউজারের পোস্ট টাইমলাইন আনা
+// ৭. টাইমলাইন আনা
 $user_posts_query = "SELECT * FROM posts WHERE user_id='$view_user_id' ORDER BY created_at DESC";
 $user_posts = mysqli_query($conn, $user_posts_query);
 
@@ -82,11 +82,11 @@ $profile_img = ($user['profile_pic'] != 'default.png') ? "../" . $user['profile_
         .timeline-post { border-radius: 20px; border: none; box-shadow: var(--card-shadow); margin-bottom: 20px; background: white; overflow: hidden; }
         .post-img { width: 100%; max-height: 400px; object-fit: cover; border-radius: 12px; margin-top: 10px; border: 1px solid #eee; }
         .section-title { font-weight: 800; color: #2d3436; margin-bottom: 25px; display: flex; align-items: center; gap: 10px; }
+        .private-lock { font-size: 50px; color: #adb5bd; }
     </style>
 </head>
 <body>
 
-    <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top shadow-sm">
         <div class="container">
             <a class="navbar-brand fw-bold fs-4" href="dashboard.php">CampusConnect</a>
@@ -101,110 +101,99 @@ $profile_img = ($user['profile_pic'] != 'default.png') ? "../" . $user['profile_
             <div class="col-lg-10">
                 <div class="card profile-card p-4 p-md-5 mb-5">
                     <div class="row">
-                        <!-- Left Column: User Profile -->
+                        <!-- Left Column -->
                         <div class="col-md-4 text-center border-end">
                             <img src="<?php echo $profile_img; ?>" class="user-avatar mb-4">
                             <h3 class="fw-bold mb-1 text-dark"><?php echo $user['full_name']; ?></h3>
                             <span class="badge bg-primary-subtle text-primary rounded-pill px-3 py-2 mb-3 small fw-bold"><?php echo strtoupper($user['role']); ?></span>
-                            <p class="text-muted small mb-4"><?php echo $user['dept']; ?> Department</p>
+                            <p class="text-muted small mb-1"><?php echo $user['dept']; ?> Department</p>
+                            
+                            <!-- Privacy Status Badge -->
+                            <?php if($user['is_private']): ?>
+                                <span class="badge bg-light text-muted border rounded-pill mb-4" style="font-size: 10px;"><i class="bi bi-lock-fill"></i> Private Profile</span>
+                            <?php endif; ?>
                             
                             <p class="small text-secondary fw-medium italic mb-4">"<?php echo $user['bio'] ?? 'No bio added yet.'; ?>"</p>
 
-                            <!-- Button Container -->
                             <div class="d-grid gap-2 px-3">
                                 <?php if($is_my_profile): ?>
                                     <a href="edit_profile.php" class="btn btn-primary rounded-pill fw-bold py-2 shadow-sm">Edit Profile</a>
                                 <?php elseif($he_blocked_me): ?>
-                                    <!-- যদি সে আমাকে ব্লক করে থাকে -->
-                                    <div class="alert alert-danger small py-2 rounded-pill text-center mb-0">
-                                        <i class="bi bi-slash-circle me-1"></i> You are blocked
-                                    </div>
+                                    <div class="alert alert-danger small py-2 rounded-pill text-center">Blocked</div>
                                 <?php elseif($i_blocked_him): ?>
-                                    <!-- যদি আমি তাকে ব্লক করে থাকি (Unblock Option) -->
-                                    <a href="toggle_block.php?id=<?php echo $view_user_id; ?>" class="btn btn-danger rounded-pill fw-bold py-2 shadow-sm">
-                                        <i class="bi bi-person-check-fill me-2"></i> Unblock User
-                                    </a>
+                                    <a href="toggle_block.php?id=<?php echo $view_user_id; ?>" class="btn btn-danger rounded-pill fw-bold py-2 shadow-sm">Unblock User</a>
                                 <?php else: ?>
-                                    
-                                    <!-- স্বাভাবিক বাটনগুলো যখন কেউ কাউকে ব্লক করেনি -->
-                                    
-                                    <!-- ১. কানেকশন বাটন -->
+                                    <!-- Connection Button -->
                                     <?php if($is_connected): ?>
-                                        <a href="toggle_connect.php?id=<?php echo $view_user_id; ?>" class="btn btn-success rounded-pill fw-bold py-2"><i class="bi bi-person-check-fill"></i> Connected</a>
+                                        <a href="toggle_connect.php?id=<?php echo $view_user_id; ?>" class="btn btn-success rounded-pill fw-bold py-2">Connected</a>
                                     <?php elseif($is_pending_conn): ?>
                                         <a href="toggle_connect.php?id=<?php echo $view_user_id; ?>" class="btn btn-warning rounded-pill fw-bold py-2">Pending Request</a>
                                     <?php else: ?>
                                         <a href="toggle_connect.php?id=<?php echo $view_user_id; ?>" class="btn btn-outline-primary rounded-pill fw-bold py-2">Connect</a>
                                     <?php endif; ?>
 
-                                    <!-- ২. মেসেজ বাটন -->
+                                    <!-- Message Button -->
                                     <div class="mt-1">
                                         <?php if($_SESSION['role'] == 'admin' || $chat_status == 'accepted'): ?>
-                                            <a href="chat.php?user_id=<?php echo $view_user_id; ?>" class="btn btn-dark w-100 rounded-pill fw-bold py-2 shadow-sm">
-                                                <i class="bi bi-chat-fill text-info"></i> Message
-                                            </a>
+                                            <a href="chat.php?user_id=<?php echo $view_user_id; ?>" class="btn btn-dark w-100 rounded-pill fw-bold py-2 shadow-sm">Message</a>
                                         <?php elseif($chat_status == 'pending'): ?>
-                                            <?php if($msg_req_sender == $current_user_id): ?>
-                                                <button class="btn btn-secondary w-100 rounded-pill fw-bold py-2 mb-1" disabled>Request Sent</button>
-                                                <a href="cancel_msg_request.php?id=<?php echo $view_user_id; ?>" class="text-danger small fw-bold text-decoration-none text-center d-block">Cancel Request</a>
-                                            <?php else: ?>
-                                                <a href="message_requests.php" class="btn btn-warning w-100 rounded-pill fw-bold py-2">Review Request</a>
-                                            <?php endif; ?>
+                                            <button class="btn btn-secondary w-100 rounded-pill fw-bold py-2" disabled>Message Requested</button>
                                         <?php else: ?>
-                                            <a href="send_msg_request.php?id=<?php echo $view_user_id; ?>" class="btn btn-outline-dark w-100 rounded-pill fw-bold py-2">
-                                                <i class="bi bi-chat-dots"></i> Message Request
-                                            </a>
+                                            <a href="send_msg_request.php?id=<?php echo $view_user_id; ?>" class="btn btn-outline-dark w-100 rounded-pill fw-bold py-2">Request Message</a>
                                         <?php endif; ?>
                                     </div>
-
-                                    <!-- ৩. ব্লক করার লিঙ্ক -->
                                     <div class="text-center mt-2">
-                                        <a href="toggle_block.php?id=<?php echo $view_user_id; ?>" class="text-danger small text-decoration-none fw-bold" onclick="return confirm('Block this user?')">
-                                            <i class="bi bi-slash-circle"></i> Block User
-                                        </a>
+                                        <a href="toggle_block.php?id=<?php echo $view_user_id; ?>" class="text-danger small text-decoration-none fw-bold"><i class="bi bi-slash-circle"></i> Block</a>
                                     </div>
-
                                 <?php endif; ?>
                             </div>
                         </div>
 
-                        <!-- Right Column: Details & Stats -->
+                        <!-- Right Column -->
                         <div class="col-md-8 ps-md-5 mt-5 mt-md-0">
-                            <h5 class="section-title" style="font-size: 18px;">Information Details</h5>
-                            <div class="row">
-                                <div class="col-sm-6">
-                                    <label class="info-label">University ID</label>
-                                    <p class="info-value"><?php echo $user['university_id']; ?></p>
-                                    <label class="info-label">Official Email</label>
-                                    <p class="info-value text-truncate"><?php echo $user['email']; ?></p>
-                                    <label class="info-label">Contact</label>
-                                    <p class="info-value"><?php echo $user['phone'] ?? 'Not provided'; ?></p>
+                            <?php if($show_details): ?>
+                                <h5 class="section-title" style="font-size: 18px;">Information Details</h5>
+                                <div class="row">
+                                    <div class="col-sm-6">
+                                        <label class="info-label">University ID</label>
+                                        <p class="info-value"><?php echo $user['university_id']; ?></p>
+                                        <label class="info-label">Official Email</label>
+                                        <p class="info-value text-truncate"><?php echo $user['email']; ?></p>
+                                        <label class="info-label">Contact</label>
+                                        <p class="info-value"><?php echo $user['phone'] ?? 'Not provided'; ?></p>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <label class="info-label">Batch</label>
+                                        <p class="info-value"><?php echo $user['batch'] ?? 'N/A'; ?></p>
+                                        <label class="info-label">Skills</label>
+                                        <p class="info-value text-primary"><?php echo $user['skills'] ?? 'N/A'; ?></p>
+                                        <label class="info-label">LinkedIn</label>
+                                        <p class="info-value"><?php echo $user['linkedin_url'] ? "<a href='{$user['linkedin_url']}' target='_blank'>View Profile</a>" : 'N/A'; ?></p>
+                                    </div>
                                 </div>
-                                <div class="col-sm-6">
-                                    <label class="info-label">Batch</label>
-                                    <p class="info-value"><?php echo $user['batch'] ?? 'N/A'; ?></p>
-                                    <label class="info-label">Skills</label>
-                                    <p class="info-value text-primary"><?php echo $user['skills'] ?? 'N/A'; ?></p>
-                                    <label class="info-label">LinkedIn</label>
-                                    <p class="info-value">
-                                        <?php if($user['linkedin_url']): ?>
-                                            <a href="<?php echo $user['linkedin_url']; ?>" target="_blank" class="text-decoration-none">View Profile</a>
-                                        <?php else: echo 'N/A'; endif; ?>
-                                    </p>
+                                <h5 class="section-title mt-4" style="font-size: 18px;">Activity Statistics</h5>
+                                <div class="row g-3 text-center">
+                                    <div class="col-4"><div class="stat-box shadow-sm"><h3 class="fw-bold mb-0 text-primary"><?php echo mysqli_num_rows($user_posts); ?></h3><small class="text-muted fw-bold small">Posts</small></div></div>
+                                    <div class="col-4"><div class="stat-box shadow-sm"><h3 class="fw-bold mb-0 text-success"><?php echo mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM comments WHERE user_id='$view_user_id'"))['total']; ?></h3><small class="text-muted fw-bold small">Comments</small></div></div>
+                                    <div class="col-4"><div class="stat-box shadow-sm"><h6 class="fw-bold mb-0 mt-2"><?php echo date('M Y', strtotime($user['created_at'])); ?></h6><small class="text-muted fw-bold small">Joined</small></div></div>
                                 </div>
-                            </div>
-
-                            <h5 class="section-title mt-4" style="font-size: 18px;">Activity Statistics</h5>
-                            <div class="row g-3 text-center">
-                                <div class="col-4"><div class="stat-box shadow-sm"><h3 class="fw-bold mb-0 text-primary"><?php echo mysqli_num_rows($user_posts); ?></h3><small class="text-muted fw-bold small">Posts</small></div></div>
-                                <div class="col-4"><div class="stat-box shadow-sm"><h3 class="fw-bold mb-0 text-success"><?php echo mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM comments WHERE user_id='$view_user_id'"))['total']; ?></h3><small class="text-muted fw-bold small">Comments</small></div></div>
-                                <div class="col-4"><div class="stat-box shadow-sm"><h6 class="fw-bold mb-0 mt-2"><?php echo date('M Y', strtotime($user['created_at'])); ?></h6><small class="text-muted fw-bold small">Joined</small></div></div>
-                            </div>
+                            <?php else: ?>
+                                <!-- Privacy Locked State -->
+                                <div class="text-center py-5">
+                                    <i class="bi bi-lock-fill private-lock mb-3 d-block"></i>
+                                    <h4 class="fw-bold">This Profile is Private</h4>
+                                    <p class="text-muted">Only connected users can see full information and timeline.</p>
+                                    <?php if(!$is_pending_conn): ?>
+                                        <p class="small text-primary fw-bold">Send a connection request to see more!</p>
+                                    <?php endif; ?>
+                                </div>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>
 
                 <!-- Timeline Section -->
+                <?php if($show_details): ?>
                 <div class="row justify-content-center">
                     <div class="col-md-10">
                         <h4 class="section-title"><i class="bi bi-grid-3x3-gap-fill text-primary"></i> <?php echo $is_my_profile ? "My Timeline" : $user['full_name']."'s Posts"; ?></h4>
@@ -244,6 +233,7 @@ $profile_img = ($user['profile_pic'] != 'default.png') ? "../" . $user['profile_
                         <?php else: ?><div class="text-center py-5 bg-white rounded-4 border"><i class="bi bi-file-earmark-post display-1 text-muted opacity-25"></i><p class="text-muted mt-3">No posts yet.</p></div><?php endif; ?>
                     </div>
                 </div>
+                <?php endif; ?>
             </div>
         </div>
     </div>
