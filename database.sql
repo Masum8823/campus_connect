@@ -390,3 +390,6 @@ ALTER TABLE private_messages
 ADD CONSTRAINT private_messages_ibfk_2 
 FOREIGN KEY (sender_id) REFERENCES users(id) 
 ON DELETE CASCADE;
+
+ALTER TABLE academic_files 
+MODIFY COLUMN category ENUM('class_routine', 'exam_routine', 'course_material', 'course_outline') NOT NULL;

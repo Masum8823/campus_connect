@@ -93,6 +93,7 @@ if (isset($_POST['upload_resource'])) {
                                     <option value="class_routine">Class Routine</option>
                                     <option value="exam_routine">Exam Routine</option>
                                     <option value="course_material">Course Material</option>
+                                    <option value="course_outline">Course Outline</option>
                                 </select>
                             </div>
                             <!-- Department Selection -->
