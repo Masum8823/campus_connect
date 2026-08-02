@@ -8,6 +8,8 @@ if(!isset($_SESSION['user_id']) || !isset($_GET['id'])){
 $id = $_GET['id'];
 $current_user_id = $_SESSION['user_id'];
 
+
+
 // ইভেন্ট তথ্য এবং অর্গানাইজারের নাম আনা
 $query = mysqli_query($conn, "SELECT events.*, users.full_name, users.profile_pic, users.dept 
                              FROM events 
@@ -96,6 +98,14 @@ $count_going = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total 
                             </div>
                         </div>
 
+                        <!-- শুধুমাত্র অর্গানাইজার বা এডমিন এই বাটনটি দেখবে -->
+                        <?php if($current_user_id == $event['organizer_id'] || $_SESSION['role'] == 'admin'): ?>
+                            <div class="mb-4">
+                                <a href="manage_attendees.php?id=<?php echo $id; ?>" class="btn btn-dark btn-sm rounded-pill px-4 fw-bold shadow-sm">
+                                    <i class="bi bi-people-fill"></i> Manage Attendees
+                                </a>
+                            </div>
+                        <?php endif; ?>
                         <h5 class="fw-bold mb-3 border-bottom pb-2">About this Event</h5>
                         <p class="text-secondary mb-5" style="font-size: 17px; line-height: 1.8; white-space: pre-line;">
                             <?php echo $event['description']; ?>
