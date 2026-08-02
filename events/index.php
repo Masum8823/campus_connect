@@ -7,18 +7,16 @@ if(!isset($_SESSION['user_id'])){
 
 $current_user_id = $_SESSION['user_id'];
 $user_role = $_SESSION['role'];
-
-// বর্তমান তারিখ (Today's Date)
 $today = date('Y-m-d');
 
-// ১. আপকামিং ইভেন্ট কুয়েরি: যেসব ইভেন্ট আজ অথবা ভবিষ্যতে হবে
+// ১. আপকামিং ইভেন্ট কুয়েরি (নতুনগুলো আগে)
 $upcoming_q = "SELECT events.*, users.full_name FROM events 
                JOIN users ON events.organizer_id = users.id 
                WHERE event_date >= '$today' 
                ORDER BY event_date ASC";
 $upcoming_events = mysqli_query($conn, $upcoming_q);
 
-// ২. গত হয়ে যাওয়া ইভেন্ট কুয়েরি: যেসব ইভেন্ট গতকাল বা তার আগে শেষ হয়েছে
+// ২. গত হয়ে যাওয়া ইভেন্ট কুয়েরি (লিমিট ৬টি)
 $past_q = "SELECT events.*, users.full_name FROM events 
            JOIN users ON events.organizer_id = users.id 
            WHERE event_date < '$today' 
@@ -39,45 +37,62 @@ $past_events = mysqli_query($conn, $past_q);
         :root { --primary-color: #0d6efd; --bg-light: #f8f9fa; --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.05); }
         body { background-color: var(--bg-light); font-family: 'Plus Jakarta Sans', sans-serif; padding-top: 80px; }
 
-        .event-card { border-radius: 25px; border: none; overflow: hidden; transition: 0.3s; background: white; box-shadow: var(--card-shadow); height: 100%; display: flex; flex-direction: column; }
+        /* Navigation */
+        .navbar { background: #0d6efd !important; }
+
+        /* Event Card Styles */
+        .event-card { border-radius: 25px; border: none; overflow: hidden; transition: all 0.3s ease; background: white; box-shadow: var(--card-shadow); height: 100%; display: flex; flex-direction: column; }
         .event-card:hover { transform: translateY(-8px); box-shadow: 0 15px 35px rgba(0,0,0,0.1); }
         
         .banner-container { position: relative; height: 200px; overflow: hidden; background: #eee; }
-        .banner-img { width: 100%; height: 100%; object-fit: cover; }
+        .banner-img { width: 100%; height: 100%; object-fit: cover; transition: 0.5s; }
+        .event-card:hover .banner-img { transform: scale(1.08); }
 
-        .date-badge { position: absolute; top: 15px; left: 15px; background: white; border-radius: 12px; padding: 8px 15px; text-align: center; font-weight: 800; color: #0d6efd; box-shadow: 0 4px 10px rgba(0,0,0,0.1); line-height: 1.2; z-index: 2; }
+        .date-badge { position: absolute; top: 15px; left: 15px; background: white; border-radius: 15px; padding: 8px 15px; text-align: center; font-weight: 800; color: #0d6efd; box-shadow: 0 4px 10px rgba(0,0,0,0.1); line-height: 1.2; z-index: 2; }
         .date-badge span { display: block; font-size: 11px; text-transform: uppercase; color: #666; }
 
+        .cat-badge { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; padding: 5px 12px; border-radius: 50px; background: #e7f1ff; color: #0d6efd; }
+
         /* Past Events Style */
-        .past-event-card { opacity: 0.75; }
-        .past-event-card .banner-img { filter: grayscale(100%); }
-        .section-divider { border-top: 2px dashed #ddd; margin: 60px 0 40px; position: relative; }
-        .section-divider span { position: absolute; top: -14px; left: 50%; transform: translateX(-50%); background: var(--bg-light); padding: 0 20px; color: #999; font-weight: 700; text-transform: uppercase; font-size: 12px; letter-spacing: 1px; }
+        .past-event { opacity: 0.8; }
+        .past-event .banner-img { filter: grayscale(100%); }
+        .section-divider { border-top: 2px dashed #ddd; margin: 50px 0; position: relative; }
+        .section-divider span { position: absolute; top: -14px; left: 50%; transform: translateX(-50%); background: var(--bg-light); padding: 0 20px; color: #999; font-weight: 700; text-transform: uppercase; font-size: 12px; }
+
+        .btn-view { border-radius: 50px; font-weight: 700; font-size: 13px; padding: 8px 20px; }
     </style>
 </head>
 <body>
 
-    <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top shadow-sm">
+    <!-- Top Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark fixed-top shadow-sm">
         <div class="container">
-            <a class="navbar-brand fw-bold fs-4" href="../user/dashboard.php">CampusConnect Events</a>
-            <div class="ms-auto">
+            <a class="navbar-brand fw-bold fs-4" href="../user/dashboard.php">
+                <i class="bi bi-calendar-event-fill me-2"></i> Events Hub
+            </a>
+            <div class="ms-auto d-flex align-items-center">
                 <a href="../user/dashboard.php" class="btn btn-light btn-sm fw-bold rounded-pill px-4 me-2">Dashboard</a>
                 <?php if($user_role == 'teacher' || $user_role == 'admin'): ?>
-                    <a href="create_event.php" class="btn btn-warning btn-sm fw-bold rounded-pill px-4 text-dark">+ Create Event</a>
+                    <a href="create_event.php" class="btn btn-warning btn-sm fw-bold rounded-pill px-4 text-dark shadow-sm">+ Create Event</a>
                 <?php endif; ?>
             </div>
         </div>
     </nav>
 
     <div class="container pb-5">
+        
+        <!-- Header -->
         <div class="text-center mb-5 mt-4">
-            <h2 class="fw-extrabold text-dark">Campus Events Hub</h2>
-            <p class="text-muted">Stay updated with the latest university activities.</p>
+            <h2 class="fw-extrabold text-dark">University Events</h2>
+            <p class="text-muted">Stay connected with the latest campus activities and workshops.</p>
         </div>
 
-        <!-- --- ১. আপকামিং ইভেন্ট সেকশন --- -->
-        <h4 class="fw-bold text-dark mb-4 px-2"><i class="bi bi-calendar-check text-primary me-2"></i> Upcoming Events</h4>
+        <!-- --- UPCOMING EVENTS SECTION --- -->
+        <div class="d-flex justify-content-between align-items-center mb-4 px-2">
+            <h4 class="fw-bold text-dark mb-0"><i class="bi bi-stars text-warning"></i> Upcoming Events</h4>
+            <span class="badge bg-primary rounded-pill px-3"><?php echo mysqli_num_rows($upcoming_events); ?> Scheduled</span>
+        </div>
+
         <div class="row">
             <?php if(mysqli_num_rows($upcoming_events) > 0): ?>
                 <?php while($row = mysqli_fetch_assoc($upcoming_events)): ?>
@@ -88,35 +103,47 @@ $past_events = mysqli_query($conn, $past_q);
                                     <?php echo date('d', strtotime($row['event_date'])); ?>
                                     <span><?php echo date('M', strtotime($row['event_date'])); ?></span>
                                 </div>
-                                <img src="../<?php echo $row['banner_image']; ?>" class="banner-img">
+                                <img src="../<?php echo $row['banner_image']; ?>" class="banner-img" alt="Event Banner">
                             </div>
+
                             <div class="card-body p-4 d-flex flex-column">
-                                <span class="badge bg-primary-subtle text-primary mb-2 rounded-pill px-3 align-self-start" style="font-size: 10px;"><?php echo $row['category']; ?></span>
+                                <div class="mb-2">
+                                    <span class="cat-badge"><?php echo $row['category']; ?></span>
+                                </div>
                                 <h5 class="fw-bold text-dark mb-3"><?php echo $row['title']; ?></h5>
-                                <p class="text-muted small mb-4"><i class="bi bi-geo-alt-fill text-danger"></i> <?php echo $row['location']; ?></p>
+                                
+                                <div class="mb-4">
+                                    <p class="text-muted small mb-1"><i class="bi bi-geo-alt-fill text-danger"></i> <?php echo $row['location']; ?></p>
+                                    <p class="text-muted small mb-0"><i class="bi bi-clock-fill text-primary"></i> <?php echo date('h:i A', strtotime($row['event_time'])); ?></p>
+                                </div>
+
                                 <div class="mt-auto d-flex justify-content-between align-items-center pt-3 border-top">
                                     <small class="text-muted">By <strong><?php echo explode(' ', $row['full_name'])[0]; ?></strong></small>
-                                    <a href="view_event.php?id=<?php echo $row['id']; ?>" class="btn btn-primary btn-sm rounded-pill px-4 fw-bold shadow-sm">Details</a>
+                                    <a href="view_event.php?id=<?php echo $row['id']; ?>" class="btn btn-primary btn-view shadow-sm">Details</a>
                                 </div>
                             </div>
                         </div>
                     </div>
                 <?php endwhile; ?>
             <?php else: ?>
-                <div class="col-12 text-center py-4"><p class="text-muted">No upcoming events found.</p></div>
+                <div class="col-12 text-center py-5 bg-white rounded-4 border shadow-sm">
+                    <i class="bi bi-calendar-x display-1 text-muted opacity-25"></i>
+                    <p class="text-muted mt-3">No upcoming events at the moment.</p>
+                </div>
             <?php endif; ?>
         </div>
 
-        <!-- --- ২. গত হয়ে যাওয়া ইভেন্ট সেকশন --- -->
+        <!-- --- PAST EVENTS SECTION --- -->
         <?php if(mysqli_num_rows($past_events) > 0): ?>
             <div class="section-divider">
-                <span>Completed Events</span>
+                <span>History</span>
             </div>
 
+            <h4 class="fw-bold text-secondary mb-4 px-2">Past Events</h4>
             <div class="row">
                 <?php while($row = mysqli_fetch_assoc($past_events)): ?>
-                    <div class="col-lg-4 col-md-6 mb-4">
-                        <div class="card event-card past-event-card shadow-sm">
+                    <div class="col-lg-4 col-md-6 mb-4 past-event">
+                        <div class="card event-card grayscale shadow-sm">
                             <div class="banner-container">
                                 <img src="../<?php echo $row['banner_image']; ?>" class="banner-img">
                             </div>
