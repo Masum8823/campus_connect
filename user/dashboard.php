@@ -8,12 +8,12 @@ if(!isset($_SESSION['user_id'])){
 
 $current_user_id = $_SESSION['user_id'];
 
-// Fetch user info
+// ১. ইউজারের তথ্য আনা
 $user_info_query = mysqli_query($conn, "SELECT * FROM users WHERE id='$current_user_id'");
 $user_res = mysqli_fetch_assoc($user_info_query);
 $my_pic = ($user_res['profile_pic'] != 'default.png') ? "../" . $user_res['profile_pic'] : "https://ui-avatars.com/api/?name=".urlencode($_SESSION['user_name'])."&background=random";
 
-// Handle Post Submission
+// ২. পোস্ট হ্যান্ডেল করা (Text + Image)
 if(isset($_POST['submit_post'])){
     $content = mysqli_real_escape_string($conn, $_POST['content']);
     $post_image = NULL;
@@ -32,10 +32,20 @@ if(isset($_POST['submit_post'])){
     }
 }
 
-// Fetch Feed Posts
+// --- ৩. সার্চ লজিক ইমপ্লিমেন্টেশন ---
+$search = isset($_GET['search']) ? mysqli_real_escape_string($conn, $_GET['search']) : '';
+$where_sql = "WHERE 1=1"; // ডিফল্ট কন্ডিশন
+
+if(!empty($search)){
+    // পোস্টের লেখা অথবা ইউজারের নাম দিয়ে সার্চ
+    $where_sql .= " AND (posts.content LIKE '%$search%' OR users.full_name LIKE '%$search%')";
+}
+
+// ৪. সার্চ অনুযায়ী ফিড পোস্ট তুলে আনা
 $posts_query = "SELECT posts.*, users.full_name, users.dept, users.role, users.profile_pic 
                 FROM posts 
                 JOIN users ON posts.user_id = users.id 
+                $where_sql
                 ORDER BY posts.created_at DESC";
 $all_posts = mysqli_query($conn, $posts_query);
 ?>
@@ -50,24 +60,32 @@ $all_posts = mysqli_query($conn, $posts_query);
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        :root { --primary-color: #0d6efd; --sidebar-width: 280px; --bg-light: #f0f2f5; }
+        :root { --primary-color: #0d6efd; --sidebar-width: 280px; --bg-light: #f0f2f5; --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.05); }
         body { background-color: var(--bg-light); font-family: 'Plus Jakarta Sans', sans-serif; padding-top: 80px; }
+        
+        /* Sidebar Styling */
         .sidebar { position: fixed; top: 70px; left: 0; bottom: 0; width: var(--sidebar-width); background: white; padding: 20px; border-right: 1px solid #dee2e6; overflow-y: auto; z-index: 1000; }
-        .nav-link { display: flex; align-items: center; padding: 12px 15px; color: #4b4f56; font-weight: 500; border-radius: 10px; margin-bottom: 5px; transition: 0.2s; }
+        .nav-link { display: flex; align-items: center; padding: 12px 15px; color: #4b4f56; font-weight: 500; border-radius: 12px; margin-bottom: 5px; transition: 0.2s; border: none; }
         .nav-link:hover { background-color: #f2f2f2; color: var(--primary-color); }
         .nav-link.active { background-color: #e7f3ff; color: var(--primary-color); }
         .nav-link i { font-size: 1.3rem; margin-right: 12px; }
+
+        /* Content Area */
         .main-content { margin-left: var(--sidebar-width); padding: 20px; }
         .feed-container { max-width: 680px; margin: 0 auto; }
-        .post-card { background: white; border-radius: 12px; border: none; box-shadow: 0 2px 12px rgba(0,0,0,0.08); margin-bottom: 20px; overflow: hidden; }
+        
+        /* Premium Search Box */
+        .search-container { background: white; border-radius: 50px; padding: 5px 5px 5px 20px; box-shadow: var(--card-shadow); display: flex; align-items: center; margin-bottom: 25px; border: 1px solid #eee; }
+        .search-input { border: none; outline: none; width: 100%; font-size: 15px; font-weight: 500; background: transparent; }
+        
+        .post-card { background: white; border-radius: 15px; border: none; box-shadow: var(--card-shadow); margin-bottom: 20px; overflow: hidden; }
         .post-input-box { background: #f0f2f5; border-radius: 25px; padding: 10px 20px; cursor: pointer; border: none; width: 100%; text-align: left; color: #65676b; }
         .post-img-display { width: 100%; object-fit: cover; max-height: 500px; border-radius: 8px; margin-top: 10px; border: 1px solid #eee; }
+        
         .nav-profile-img { width: 38px; height: 38px; object-fit: cover; border: 2px solid white; cursor: pointer; }
         .avatar-md { width: 45px; height: 45px; object-fit: cover; border-radius: 50%; }
         .dropdown-menu { border-radius: 12px; border: none; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
-        /* Admin button special style */
         .nav-admin { background-color: #212529 !important; color: #ffc107 !important; border: 1px solid #333; }
-        .nav-admin:hover { background-color: #000 !important; transform: scale(1.02); }
 
         @media (max-width: 992px) { .sidebar { width: 85px; } .sidebar span, .sidebar h6, .sidebar p, .sidebar hr { display: none; } .main-content { margin-left: 85px; } }
     </style>
@@ -84,7 +102,6 @@ $all_posts = mysqli_query($conn, $posts_query);
                     <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-3">
                         <div class="p-3 border-bottom"><h6 class="fw-bold mb-0 small"><?php echo $_SESSION['user_name']; ?></h6><small><?php echo $_SESSION['dept']; ?></small></div>
                         <li><a class="dropdown-item mt-2" href="profile.php"><i class="bi bi-person me-2"></i> Profile</a></li>
-                        <!-- Conditional Admin Panel Link in Dropdown -->
                         <?php if($_SESSION['role'] == 'admin'): ?>
                             <li><a class="dropdown-item text-warning fw-bold" href="../admin/index.php"><i class="bi bi-shield-lock me-2"></i> Admin Panel</a></li>
                         <?php endif; ?>
@@ -97,27 +114,24 @@ $all_posts = mysqli_query($conn, $posts_query);
     </nav>
 
     <!-- Sidebar -->
-    <div class="sidebar">
+    <div class="sidebar d-none d-md-block">
         <div class="text-center mb-4">
             <a href="profile.php"><img src="<?php echo $my_pic; ?>" class="rounded-circle border border-3 border-primary mb-2" width="80" height="80" style="object-fit: cover;"></a>
-            <h6 class="fw-bold mb-0 text-dark small"><?php echo $_SESSION['user_name']; ?></h6>
+            <h6 class="fw-bold mb-0"><?php echo $_SESSION['user_name']; ?></h6>
             <p class="text-muted small"><?php echo strtoupper($_SESSION['role']); ?></p>
         </div>
         <hr>
         <nav class="nav flex-column">
-            <!-- Admin Panel Link - Only for Admin Role -->
             <?php if($_SESSION['role'] == 'admin'): ?>
-                <a href="../admin/index.php" class="nav-link nav-admin shadow-sm mb-3">
-                    <i class="bi bi-shield-lock-fill text-warning"></i> <span>ADMIN CONTROL</span>
-                </a>
+                <a href="../admin/index.php" class="nav-link nav-admin shadow-sm mb-3"><i class="bi bi-shield-lock-fill text-warning"></i> <span>ADMIN CONTROL</span></a>
             <?php endif; ?>
-
             <a href="dashboard.php" class="nav-link active"><i class="bi bi-house-door-fill"></i> <span>Campus Feed</span></a>
             <a href="../notice/view_notice_list.php" class="nav-link"><i class="bi bi-megaphone text-warning"></i> <span>Notices</span></a>
             <a href="../lost_found/index.php" class="nav-link"><i class="bi bi-search text-info"></i> <span>Lost & Found</span></a>
             <a href="../academic/index.php" class="nav-link"><i class="bi bi-mortarboard text-success"></i> <span>Academic Hub</span></a>
             <a href="requests.php" class="nav-link"><i class="bi bi-person-plus text-danger"></i> <span>Requests</span></a>
             <a href="my_connections.php" class="nav-link"><i class="bi bi-people text-primary"></i> <span>Network</span></a>
+            <a href="messages.php" class="nav-link"><i class="bi bi-chat-square-text-fill text-success"></i> <span>Messages</span></a>
             <a href="message_requests.php" class="nav-link">
                 <i class="bi bi-chat-left-dots text-info"></i> <span>Message Requests</span>
                 <?php 
@@ -126,10 +140,6 @@ $all_posts = mysqli_query($conn, $posts_query);
                     <span class="badge bg-info rounded-pill float-end text-dark"><?php echo $count_msg_req['total']; ?></span>
                 <?php endif; ?>
             </a>
-            <a href="messages.php" class="nav-link">
-                <i class="bi bi-chat-square-text-fill text-success"></i> <span>Messages</span>
-                
-            </a>
             <a href="../alumni/index.php" class="nav-link"><i class="bi bi-award-fill text-dark"></i> <span>Alumni Hub</span></a>
         </nav>
     </div>
@@ -137,6 +147,18 @@ $all_posts = mysqli_query($conn, $posts_query);
     <!-- Main Content -->
     <div class="main-content">
         <div class="feed-container">
+
+            <!-- NEW: Global Search Bar -->
+            <div class="search-container">
+                <form method="GET" action="dashboard.php" class="w-100 d-flex align-items-center">
+                    <i class="bi bi-search text-muted me-2"></i>
+                    <input type="text" name="search" class="search-input" placeholder="Search posts or campus members..." value="<?php echo htmlspecialchars($search); ?>">
+                    <?php if(!empty($search)): ?>
+                        <a href="dashboard.php" class="btn btn-link text-muted p-0 me-3 text-decoration-none small">Clear</a>
+                    <?php endif; ?>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold">Search</button>
+                </form>
+            </div>
             
             <!-- Create Post Box -->
             <div class="card post-card p-3 mb-4 shadow-sm">
@@ -153,70 +175,77 @@ $all_posts = mysqli_query($conn, $posts_query);
                 </div>
             </div>
 
-            <!-- Feed Loop -->
-            <?php while($post = mysqli_fetch_assoc($all_posts)): 
-                $pid = $post['id'];
-                $like_res = mysqli_query($conn, "SELECT COUNT(*) as total FROM likes WHERE post_id='$pid'");
-                $total_likes = mysqli_fetch_assoc($like_res)['total'];
-                $is_liked = mysqli_num_rows(mysqli_query($conn, "SELECT * FROM likes WHERE post_id='$pid' AND user_id='$current_user_id'")) > 0;
-                $c_res = mysqli_query($conn, "SELECT COUNT(*) as total FROM comments WHERE post_id='$pid'");
-                $total_comments = mysqli_fetch_assoc($c_res)['total'];
-            ?>
-                <div class="card post-card shadow-sm">
-                    <div class="card-body p-3">
-                        <div class="d-flex align-items-center justify-content-between mb-3">
-                            <div class="d-flex align-items-center">
-                                <a href="profile.php?id=<?php echo $post['user_id']; ?>">
-                                    <?php $p_pic = ($post['profile_pic'] != 'default.png') ? "../" . $post['profile_pic'] : "https://ui-avatars.com/api/?name=".urlencode($post['full_name']); ?>
-                                    <img src="<?php echo $p_pic; ?>" class="avatar-md me-2 border">
-                                </a>
-                                <div>
-                                    <h6 class="mb-0 fw-bold small">
-                                        <a href="profile.php?id=<?php echo $post['user_id']; ?>" class="text-decoration-none text-dark"><?php echo $post['full_name']; ?></a>
-                                        <span class="badge bg-light text-dark border fw-normal ms-1" style="font-size: 9px;"><?php echo strtoupper($post['role']); ?></span>
-                                    </h6>
-                                    <small class="text-muted" style="font-size: 11px;">
-                                        <?php echo date('M d, h:i A', strtotime($post['created_at'])); ?> 
-                                        <?php if($post['is_edited'] == 1): ?> • <span class="text-primary italic">Edited</span><?php endif; ?>
-                                        • <i class="bi bi-globe"></i>
-                                    </small>
+            <!-- News Feed -->
+            <?php if(mysqli_num_rows($all_posts) > 0): ?>
+                <?php while($post = mysqli_fetch_assoc($all_posts)): 
+                    $pid = $post['id'];
+                    $like_res = mysqli_query($conn, "SELECT COUNT(*) as total FROM likes WHERE post_id='$pid'");
+                    $total_likes = mysqli_fetch_assoc($like_res)['total'];
+                    $is_liked = mysqli_num_rows(mysqli_query($conn, "SELECT * FROM likes WHERE post_id='$pid' AND user_id='$current_user_id'")) > 0;
+                    $total_comments = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM comments WHERE post_id='$pid'"))['total'];
+                ?>
+                    <div class="card post-card shadow-sm">
+                        <div class="card-body p-3">
+                            <div class="d-flex align-items-center justify-content-between mb-3">
+                                <div class="d-flex align-items-center">
+                                    <a href="profile.php?id=<?php echo $post['user_id']; ?>">
+                                        <?php $p_pic = ($post['profile_pic'] != 'default.png') ? "../" . $post['profile_pic'] : "https://ui-avatars.com/api/?name=".urlencode($post['full_name']); ?>
+                                        <img src="<?php echo $p_pic; ?>" class="avatar-md me-2 border">
+                                    </a>
+                                    <div>
+                                        <h6 class="mb-0 fw-bold small">
+                                            <a href="profile.php?id=<?php echo $post['user_id']; ?>" class="text-decoration-none text-dark"><?php echo $post['full_name']; ?></a>
+                                            <span class="badge bg-light text-dark border fw-normal ms-1" style="font-size: 9px;"><?php echo strtoupper($post['role']); ?></span>
+                                        </h6>
+                                        <small class="text-muted" style="font-size: 11px;">
+                                            <?php echo date('M d, h:i A', strtotime($post['created_at'])); ?> 
+                                            <?php if($post['is_edited'] == 1): ?> • <span class="text-primary italic">Edited</span><?php endif; ?>
+                                            • <i class="bi bi-globe"></i>
+                                        </small>
+                                    </div>
                                 </div>
+                                
+                                <?php if($post['user_id'] == $current_user_id || $_SESSION['role'] == 'admin'): ?>
+                                    <div class="dropdown">
+                                        <i class="bi bi-three-dots text-muted" role="button" data-bs-toggle="dropdown"></i>
+                                        <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                                            <?php if($post['user_id'] == $current_user_id): ?>
+                                                <li><a class="dropdown-item small" href="../post/edit_post.php?id=<?php echo $pid; ?>"><i class="bi bi-pencil me-2"></i> Edit Post</a></li>
+                                            <?php endif; ?>
+                                            <li><a class="dropdown-item small text-danger" href="../post/delete_post.php?id=<?php echo $pid; ?>" onclick="return confirm('Delete this post?')"><i class="bi bi-trash me-2"></i> Delete Post</a></li>
+                                        </ul>
+                                    </div>
+                                <?php endif; ?>
                             </div>
-                            
-                            <?php if($post['user_id'] == $current_user_id || $_SESSION['role'] == 'admin'): ?>
-                                <div class="dropdown">
-                                    <i class="bi bi-three-dots text-muted" role="button" data-bs-toggle="dropdown"></i>
-                                    <ul class="dropdown-menu dropdown-menu-end shadow-sm">
-                                        <?php if($post['user_id'] == $current_user_id): ?>
-                                            <li><a class="dropdown-item small" href="../post/edit_post.php?id=<?php echo $pid; ?>"><i class="bi bi-pencil me-2"></i> Edit Post</a></li>
-                                        <?php endif; ?>
-                                        <li><a class="dropdown-item small text-danger" href="../post/delete_post.php?id=<?php echo $pid; ?>" onclick="return confirm('Delete this post?')"><i class="bi bi-trash me-2"></i> Delete Post</a></li>
-                                    </ul>
-                                </div>
+
+                            <p class="card-text px-1"><?php echo nl2br($post['content']); ?></p>
+
+                            <?php if(!empty($post['post_image'])): ?>
+                                <div class="px-1 text-center"><img src="../<?php echo $post['post_image']; ?>" class="post-img-display shadow-sm"></div>
                             <?php endif; ?>
-                        </div>
-
-                        <p class="card-text px-1"><?php echo nl2br($post['content']); ?></p>
-
-                        <?php if(!empty($post['post_image'])): ?>
-                            <div class="px-1 text-center"><img src="../<?php echo $post['post_image']; ?>" class="post-img-display shadow-sm"></div>
-                        <?php endif; ?>
-                        
-                        <div class="d-flex justify-content-around border-top border-bottom py-2 mt-3 mb-2">
-                            <a href="toggle_like.php?post_id=<?php echo $pid; ?>" class="btn btn-link text-decoration-none fw-bold btn-sm <?php echo $is_liked ? 'text-primary' : 'text-muted'; ?>">
-                                <i class="bi <?php echo $is_liked ? 'bi-hand-thumbs-up-fill' : 'bi-hand-thumbs-up'; ?> me-1"></i> <?php echo $total_likes; ?> Like
-                            </a>
-                            <a href="../post/view_post.php?id=<?php echo $pid; ?>" class="btn btn-link text-decoration-none text-muted fw-bold btn-sm">
-                                <i class="bi bi-chat-left me-1"></i> <?php echo $total_comments; ?> Comment
-                            </a>
+                            
+                            <div class="d-flex justify-content-around border-top border-bottom py-2 mt-3 mb-2">
+                                <a href="toggle_like.php?post_id=<?php echo $pid; ?>" class="btn btn-link text-decoration-none fw-bold btn-sm <?php echo $is_liked ? 'text-primary' : 'text-muted'; ?>">
+                                    <i class="bi <?php echo $is_liked ? 'bi-hand-thumbs-up-fill' : 'bi-hand-thumbs-up'; ?> me-1"></i> <?php echo $total_likes; ?> Like
+                                </a>
+                                <a href="../post/view_post.php?id=<?php echo $pid; ?>" class="btn btn-link text-decoration-none text-muted fw-bold btn-sm">
+                                    <i class="bi bi-chat-left me-1"></i> <?php echo $total_comments; ?> Comment
+                                </a>
+                            </div>
                         </div>
                     </div>
+                <?php endwhile; ?>
+            <?php else: ?>
+                <div class="text-center py-5 bg-white rounded-4 shadow-sm">
+                    <i class="bi bi-search display-1 text-muted opacity-25"></i>
+                    <p class="text-muted mt-3 fw-bold">No results found for "<?php echo htmlspecialchars($search); ?>"</p>
+                    <a href="dashboard.php" class="btn btn-link text-primary text-decoration-none">View All Posts</a>
                 </div>
-            <?php endwhile; ?>
+            <?php endif; ?>
         </div>
     </div>
 
-    <!-- Post Modal -->
+    <!-- Create Post Modal -->
     <div class="modal fade" id="postModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content border-0 shadow-lg" style="border-radius: 15px;">
