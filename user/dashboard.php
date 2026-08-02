@@ -132,6 +132,9 @@ $all_posts = mysqli_query($conn, $posts_query);
             <a href="../notice/view_notice_list.php" class="nav-link"><i class="bi bi-megaphone text-warning"></i> <span>Notices</span></a>
             <a href="../lost_found/index.php" class="nav-link"><i class="bi bi-search text-info"></i> <span>Lost & Found</span></a>
             <a href="../academic/index.php" class="nav-link"><i class="bi bi-mortarboard text-success"></i> <span>Academic Hub</span></a>
+            <a href="../events/index.php" class="nav-link">
+                <i class="bi bi-calendar-check text-danger"></i> <span>Events Hub</span>
+            </a>
             <a href="requests.php" class="nav-link"><i class="bi bi-person-plus text-danger"></i> <span>Requests</span></a>
             <a href="my_connections.php" class="nav-link"><i class="bi bi-people text-primary"></i> <span>Network</span></a>
             <a href="messages.php" class="nav-link"><i class="bi bi-chat-square-text-fill text-success"></i> <span>Messages</span></a>
