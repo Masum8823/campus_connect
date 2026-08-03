@@ -37,39 +37,67 @@ $is_chat_blocked = mysqli_num_rows($block_check) > 0;
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
-        body { background-color: #f0f2f5; font-family: 'Plus Jakarta Sans', sans-serif; }
-        .chat-container { max-width: 600px; margin: 20px auto; background: white; border-radius: 20px; overflow: hidden; display: flex; flex-direction: column; height: 85vh; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
-        
-        /* Updated Chat Header with Status */
-        .chat-header { padding: 12px 20px; background: #0d6efd; color: white; display: flex; align-items: center; }
-        .status-dot { font-size: 8px; vertical-align: middle; margin-right: 4px; }
-        
-        .chat-box { flex-grow: 1; padding: 20px; overflow-y: auto; background: #f9f9f9; display: flex; flex-direction: column; }
-        .message-wrapper { margin-bottom: 15px; position: relative; }
-        .message { max-width: 80%; padding: 10px 15px; border-radius: 18px; font-size: 14px; position: relative; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .sent { align-self: flex-end; background: #0d6efd; color: white; border-bottom-right-radius: 2px; }
-        .received { align-self: flex-start; background: white; color: #050505; border-bottom-left-radius: 2px; border: 1px solid #eee; }
-        
-        .reply-preview-in-chat { background: rgba(0,0,0,0.05); padding: 5px 10px; border-radius: 10px; font-size: 12px; border-left: 3px solid #0d6efd; margin-bottom: 8px; color: #555; }
-        .sent .reply-preview-in-chat { background: rgba(255,255,255,0.2); color: #fff; border-left-color: white; }
+    :root { --primary-color: #0d6efd; --bg-light: #f0f2f5; }
+    body { background-color: var(--bg-light); font-family: 'Plus Jakarta Sans', sans-serif; padding-top: 80px; }
+    
+    .chat-container { max-width: 600px; margin: 20px auto; background: white; border-radius: 25px; overflow: hidden; display: flex; flex-direction: column; height: 85vh; box-shadow: 0 10px 40px rgba(0,0,0,0.1); }
+    
+    /* Header with Status */
+    .chat-header { padding: 12px 20px; background: var(--primary-color); color: white; display: flex; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .status-dot { font-size: 8px; vertical-align: middle; margin-right: 4px; }
+    
+    .chat-box { flex-grow: 1; padding: 20px; overflow-y: auto; background: #f9f9f9; display: flex; flex-direction: column; }
+    
+    /* Message Bubbles */
+    .message-wrapper { margin-bottom: 12px; position: relative; width: 100%; }
+    .message { max-width: 80%; padding: 10px 18px; border-radius: 20px; font-size: 14.5px; position: relative; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+    .sent { align-self: flex-end; background: var(--primary-color); color: white; border-bottom-right-radius: 4px; }
+    .received { align-self: flex-start; background: white; color: #050505; border-bottom-left-radius: 4px; border: 1px solid #f0f0f0; }
+    
+    /* --- New Actions & Dropdown Logic --- */
+    .msg-options-dropdown, .reply-btn-hover { 
+        opacity: 0; 
+        transition: opacity 0.2s ease; 
+        color: #adb5bd; 
+        font-size: 14px;
+    }
+    .message-wrapper:hover .msg-options-dropdown, 
+    .message-wrapper:hover .reply-btn-hover { 
+        opacity: 1; 
+    }
 
-        .chat-img { max-width: 100%; border-radius: 12px; cursor: pointer; }
-        .file-attachment { display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; background: rgba(0,0,0,0.05); padding: 8px 12px; border-radius: 12px; }
-        
-        .chat-footer { padding: 0; background: white; border-top: 1px solid #eee; }
-        .msg-input-container { padding: 15px; display: flex; align-items: center; }
-        .msg-input { border-radius: 25px; border: none; padding: 10px 20px; background: #f0f2f5; flex-grow: 1; }
+    /* Premium Dropdown Menu */
+    .dropdown-menu { 
+        border-radius: 15px; 
+        border: none; 
+        box-shadow: 0 5px 20px rgba(0,0,0,0.1); 
+        padding: 8px; 
+        font-size: 13px;
+        min-width: 120px;
+    }
+    .dropdown-item { border-radius: 8px; padding: 8px 12px; font-weight: 500; }
+    .dropdown-item:hover { background-color: #f8f9fa; color: var(--primary-color); }
+    .dropdown-item.text-danger:hover { background-color: #fff5f5; }
 
-        .msg-actions { display: none; position: absolute; top: -25px; background: white; box-shadow: 0 2px 10px rgba(0,0,0,0.1); border-radius: 10px; padding: 2px 8px; z-index: 10; gap: 10px; }
-        .message-wrapper:hover .msg-actions { display: flex; }
-        .sent .msg-actions { right: 0; }
-        .received .msg-actions { left: 0; }
-        .msg-actions i { cursor: pointer; font-size: 14px; color: #666; transition: 0.2s; }
-        .msg-actions i:hover { color: #0d6efd; }
+    /* Reply UI inside chat bubbles */
+    .reply-preview-in-chat { background: rgba(0,0,0,0.05); padding: 6px 12px; border-radius: 12px; font-size: 12px; border-left: 3.5px solid var(--primary-color); margin-bottom: 8px; color: #666; }
+    .sent .reply-preview-in-chat { background: rgba(255,255,255,0.15); color: #eef2ff; border-left-color: white; }
 
-        .msg-time { font-size: 10px; margin-top: 4px; opacity: 0.7; }
-        #reply_container { transition: 0.3s; }
-    </style>
+    /* Attachments */
+    .chat-img { max-width: 100%; border-radius: 15px; cursor: pointer; border: 1px solid rgba(0,0,0,0.05); }
+    .file-attachment { display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; background: #f8f9fa; padding: 10px 15px; border-radius: 15px; border: 1px solid #eee; }
+    
+    /* Footer & Input */
+    .chat-footer { background: white; border-top: 1px solid #eee; }
+    .msg-input-container { padding: 15px; display: flex; align-items: center; gap: 10px; }
+    .msg-input { border-radius: 25px; border: none; padding: 12px 20px; background: #f0f2f5; flex-grow: 1; font-size: 14px; transition: 0.2s; }
+    .msg-input:focus { background: #eef2ff; outline: none; }
+
+    /* Reply Preview on Footer */
+    #reply_container { background: #f8f9fa; padding: 10px 15px; border-top: 1px solid #eee; }
+
+    .msg-time { font-size: 10px; margin-top: 5px; color: #999; }
+</style>
 </head>
 <body>
 
