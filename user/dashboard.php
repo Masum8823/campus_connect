@@ -1,5 +1,6 @@
 <?php
 include '../config.php'; 
+include '../includes/event_reminders.php';
 
 if(!isset($_SESSION['user_id'])){
     header("Location: ../auth/login.php");
