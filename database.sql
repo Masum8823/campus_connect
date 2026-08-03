@@ -421,3 +421,14 @@ CREATE TABLE IF NOT EXISTS event_participations (
     FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
+
+CREATE TABLE IF NOT EXISTS notifications (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT, -- কাকে নোটিফিকেশন পাঠানো হচ্ছে
+    type VARCHAR(50), -- 'event', 'message', 'reminder'
+    message TEXT,
+    link VARCHAR(255), -- ক্লিক করলে কোথায় যাবে
+    is_read TINYINT(1) DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
