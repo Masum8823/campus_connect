@@ -49,6 +49,9 @@ $posts_query = "SELECT posts.*, users.full_name, users.dept, users.role, users.p
                 ORDER BY posts.created_at DESC";
 $all_posts = mysqli_query($conn, $posts_query);
 
+$notif_count_res = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM notifications WHERE user_id='$current_user_id' AND is_read=0"));
+$unread_notifs = $notif_count_res['total'];
+
 ?>
 
 <!DOCTYPE html>
@@ -94,10 +97,52 @@ $all_posts = mysqli_query($conn, $posts_query);
 <body>
 
     <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top shadow-sm">
+   <nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top shadow-sm">
         <div class="container">
             <a class="navbar-brand fw-bold fs-4" href="dashboard.php"><i class="bi bi-connectdevelop"></i> CampusConnect</a>
+            
             <div class="ms-auto d-flex align-items-center">
+                
+                <!-- --- নতুন: নোটিফিকেশন বেল আইকন --- -->
+                <div class="dropdown me-3">
+                    <a href="#" class="text-white position-relative" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-bell-fill fs-5"></i>
+                        <?php if($unread_notifs > 0): ?>
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 8px;">
+                                <?php echo $unread_notifs; ?>
+                            </span>
+                        <?php endif; ?>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end shadow border-0 p-2 mt-3" style="width: 320px; max-height: 450px; overflow-y: auto; border-radius: 15px;">
+                        <div class="px-3 py-2 border-bottom d-flex justify-content-between align-items-center">
+                            <h6 class="fw-bold mb-0 small">Notifications</h6>
+                            <span class="badge bg-primary-subtle text-primary rounded-pill small" style="font-size: 10px;"><?php echo $unread_notifs; ?> New</span>
+                        </div>
+                        <?php
+                        $notifs = mysqli_query($conn, "SELECT * FROM notifications WHERE user_id='$current_user_id' ORDER BY created_at DESC LIMIT 10");
+                        if(mysqli_num_rows($notifs) > 0){
+                            while($n = mysqli_fetch_assoc($notifs)){
+                                $bg = $n['is_read'] == 0 ? 'bg-primary-subtle' : '';
+                                echo "<li>
+                                        <a class='dropdown-item small $bg rounded-3 p-2 mb-1 text-wrap' href='mark_read.php?id={$n['id']}&link={$n['link']}'>
+                                            <div class='d-flex align-items-center'>
+                                                <i class='bi bi-info-circle-fill text-primary me-2'></i>
+                                                <div>
+                                                    {$n['message']}
+                                                    <br><small class='text-muted' style='font-size: 10px;'>".date('M d, h:i A', strtotime($n['created_at']))."</small>
+                                                </div>
+                                            </div>
+                                        </a>
+                                      </li>";
+                            }
+                        } else {
+                            echo "<li class='text-center py-4 text-muted small'><i class='bi bi-bell-slash d-block fs-3 mb-2'></i>No notifications yet</li>";
+                        }
+                        ?>
+                    </ul>
+                </div>
+
+                <!-- প্রোফাইল ড্রপডাউন (তোমার আগের কোড) -->
                 <div class="dropdown">
                     <img src="<?php echo $my_pic; ?>" class="rounded-circle nav-profile-img" data-bs-toggle="dropdown">
                     <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-3">
