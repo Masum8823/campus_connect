@@ -197,14 +197,24 @@ $is_chat_blocked = mysqli_num_rows($block_check) > 0;
 
         function editMessage(msgId, oldText) {
             const newText = prompt("Edit your message:", oldText);
-            if(newText != null && newText.trim() != ""){
-                const formData = new URLSearchParams();
-                formData.append('msg_id', msgId);
-                formData.append('message', newText);
-                fetch('edit_message.php', { method: 'POST', body: formData }).then(() => loadMessages());
+            
+            if (newText !== null && newText.trim() !== "" && newText !== oldText) {
+                // FormData ব্যবহার করা হচ্ছে যা সব ধরণের ক্যারেক্টার হ্যান্ডেল করতে পারে
+                const editData = new FormData();
+                editData.append('msg_id', msgId);
+                editData.append('message', newText);
+
+                fetch('edit_message.php', {
+                    method: 'POST',
+                    body: editData
+                })
+                .then(res => res.text())
+                .then(response => {
+                    loadMessages(); // মেসেজ আপডেট হলে চ্যাট রিফ্রেশ হবে
+                })
+                .catch(err => console.error("Edit failed:", err));
             }
         }
-
         setInterval(() => loadMessages(false), 2000);
         window.onload = () => loadMessages(true);
     </script>

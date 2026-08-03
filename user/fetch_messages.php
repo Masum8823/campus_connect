@@ -1,6 +1,6 @@
 <?php
 include '../config.php';
-session_start();
+
 
 if(isset($_GET['conv_id']) && isset($_SESSION['user_id'])){
     $conv_id = $_GET['conv_id'];
@@ -30,8 +30,7 @@ if(isset($_GET['conv_id']) && isset($_SESSION['user_id'])){
             echo '  <i class="bi bi-three-dots-vertical drop-trigger px-2" onclick="toggleCustomMenu(event)"></i>';
             echo '  <div class="custom-menu shadow-sm">';
             echo '      <div onclick="setupReply(' . $msg['id'] . ', \'' . addslashes(htmlspecialchars(substr($msg['message_text'], 0, 20))) . '\')"><i class="bi bi-reply"></i> Reply</div>';
-            echo '      <div onclick="editMessage(' . $msg['id'] . ', \'' . addslashes(htmlspecialchars($msg['message_text'])) . '\')"><i class="bi bi-pencil"></i> Edit</div>';
-            echo '      <div class="text-danger" onclick="deleteMessage(' . $msg['id'] . ')"><i class="bi bi-trash"></i> Delete</div>';
+            echo ' <div onclick="editMessage(' . $msg['id'] . ', `' . htmlspecialchars($msg['message_text'], ENT_QUOTES) . '`)"><i class="bi bi-pencil"></i> Edit</div>';            echo '      <div class="text-danger" onclick="deleteMessage(' . $msg['id'] . ')"><i class="bi bi-trash"></i> Delete</div>';
             echo '  </div>';
             echo '</div>';
         }
