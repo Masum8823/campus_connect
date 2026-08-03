@@ -48,6 +48,7 @@ $posts_query = "SELECT posts.*, users.full_name, users.dept, users.role, users.p
                 $where_sql
                 ORDER BY posts.created_at DESC";
 $all_posts = mysqli_query($conn, $posts_query);
+
 ?>
 
 <!DOCTYPE html>
