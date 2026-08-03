@@ -1,10 +1,13 @@
 <?php
 include '../config.php';
-
+session_start();
 
 if(isset($_GET['conv_id']) && isset($_SESSION['user_id'])){
     $conv_id = $_GET['conv_id'];
     $my_id = $_SESSION['user_id'];
+
+    // মেসেজ রিড মার্ক করা
+    mysqli_query($conn, "UPDATE private_messages SET is_read = 1 WHERE conversation_id = '$conv_id' AND sender_id != '$my_id' AND is_read = 0");
 
     $query = mysqli_query($conn, "SELECT m.*, r.message_text as replied_text, r.message_type as replied_type 
                                    FROM private_messages m 
@@ -21,56 +24,41 @@ if(isset($_GET['conv_id']) && isset($_SESSION['user_id'])){
         echo '<div class="message-wrapper d-flex flex-column ' . ($is_my_msg ? 'align-items-end' : 'align-items-start') . '">';
         echo '  <div class="d-flex align-items-center w-100 ' . ($is_my_msg ? 'justify-content-end' : 'justify-content-start') . '">';
         
-        // যদি আমার মেসেজ হয়, তবে বাম পাশে থ্রি-ডট দেখাবে
+        // --- আমার মেসেজের জন্য বাম পাশে থ্রি-ডট ---
         if($is_my_msg) {
-            echo '<div class="dropdown msg-options-dropdown">';
-            echo '  <i class="bi bi-three-dots-vertical text-muted px-2" data-bs-toggle="dropdown" style="cursor:pointer; font-size: 14px;"></i>';
-            echo '  <ul class="dropdown-menu shadow-sm border-0 small">';
-            echo '      <li><a class="dropdown-item py-1" href="javascript:void(0)" onclick="setupReply(' . $msg['id'] . ', \'' . htmlspecialchars(substr($msg['message_text'], 0, 25)) . '\')"><i class="bi bi-reply me-2"></i>Reply</a></li>';
-            echo '      <li><a class="dropdown-item py-1" href="javascript:void(0)" onclick="editMessage(' . $msg['id'] . ', \'' . htmlspecialchars($msg['message_text']) . '\')"><i class="bi bi-pencil me-2"></i>Edit</a></li>';
-            echo '      <li><a class="dropdown-item py-1 text-danger" href="javascript:void(0)" onclick="deleteMessage(' . $msg['id'] . ')"><i class="bi bi-trash me-2"></i>Delete</a></li>';
-            echo '  </ul>';
+            echo '<div class="custom-dropdown">';
+            echo '  <i class="bi bi-three-dots-vertical drop-trigger px-2" onclick="toggleCustomMenu(event)"></i>';
+            echo '  <div class="custom-menu shadow-sm">';
+            echo '      <div onclick="setupReply(' . $msg['id'] . ', \'' . addslashes(htmlspecialchars(substr($msg['message_text'], 0, 20))) . '\')"><i class="bi bi-reply"></i> Reply</div>';
+            echo '      <div onclick="editMessage(' . $msg['id'] . ', \'' . addslashes(htmlspecialchars($msg['message_text'])) . '\')"><i class="bi bi-pencil"></i> Edit</div>';
+            echo '      <div class="text-danger" onclick="deleteMessage(' . $msg['id'] . ')"><i class="bi bi-trash"></i> Delete</div>';
+            echo '  </div>';
             echo '</div>';
         }
 
         echo '    <div class="message ' . $class . ' shadow-sm">';
-        
-        // রিপ্লাই প্রিভিউ
         if($msg['reply_to']){
             echo '<div class="reply-preview-in-chat mb-1">';
-            if($msg['replied_type'] == 'image') echo '<i class="bi bi-image"></i> Photo';
-            else echo htmlspecialchars(substr($msg['replied_text'] ?? '', 0, 40)) . '...';
+            echo ($msg['replied_type'] == 'image') ? 'Photo' : htmlspecialchars(substr($msg['replied_text'] ?? '', 0, 30)) . '...';
             echo '</div>';
         }
 
-        // মিডিয়া রেন্ডারিং
-        if($msg['message_type'] == 'image'){
-            echo '<a href="../' . $msg['file_path'] . '" target="_blank"><img src="../' . $msg['file_path'] . '" class="chat-img mb-2"></a>';
-        } elseif($msg['message_type'] == 'file'){
-            echo '<a href="../' . $msg['file_path'] . '" class="file-attachment mb-2 text-decoration-none" download><i class="bi bi-file-earmark-arrow-down fs-4"></i> <span class="small">' . basename($msg['file_path']) . '</span></a>';
-        }
+        if($msg['message_type'] == 'image') echo '<a href="../' . $msg['file_path'] . '" target="_blank"><img src="../' . $msg['file_path'] . '" class="chat-img mb-2"></a>';
+        elseif($msg['message_type'] == 'file') echo '<a href="../' . $msg['file_path'] . '" class="file-attachment mb-2 text-decoration-none" download><i class="bi bi-file-earmark-arrow-down fs-4"></i> <span class="small">' . basename($msg['file_path']) . '</span></a>';
 
-        if(!empty($msg['message_text'])){
-            echo '<div>' . htmlspecialchars($msg['message_text']) . $edited_label . '</div>';
-        }
-
+        if(!empty($msg['message_text'])) echo '<div>' . htmlspecialchars($msg['message_text']) . $edited_label . '</div>';
         echo '    </div>';
 
-        // যদি অন্যের মেসেজ হয়, তবে ডান পাশে রিপ্লাই আইকন দেখাবে
+        // --- অন্যের মেসেজের জন্য ডান পাশে রিপ্লাই আইকন ---
         if(!$is_my_msg) {
-            echo '<i class="bi bi-reply text-muted px-2 reply-btn-hover" style="cursor:pointer;" onclick="setupReply(' . $msg['id'] . ', \'' . htmlspecialchars(substr($msg['message_text'], 0, 25)) . '\')"></i>';
+            echo '<i class="bi bi-reply text-muted px-2 drop-trigger" onclick="setupReply(' . $msg['id'] . ', \'' . addslashes(htmlspecialchars(substr($msg['message_text'], 0, 20))) . '\')"></i>';
         }
 
         echo '  </div>';
-        
-        // সিন স্ট্যাটাস এবং সময়
         echo '  <div class="d-flex align-items-center mt-1">';
-        echo '      <small class="msg-time text-muted me-2" style="font-size:10px;">' . $time . '</small>';
-        if($is_my_msg && $msg['is_read'] == 1){
-            echo '  <small class="text-primary fw-bold" style="font-size:9px;"><i class="bi bi-check2-all"></i> Seen</small>';
-        }
+        echo '      <small class="msg-time me-2">' . $time . '</small>';
+        if($is_my_msg && $msg['is_read'] == 1) echo ' <small class="text-primary fw-bold" style="font-size:9px;"><i class="bi bi-check2-all"></i> Seen</small>';
         echo '  </div>';
-        
         echo '</div>';
     }
 }
