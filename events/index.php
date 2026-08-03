@@ -118,9 +118,22 @@ $past_events = mysqli_query($conn, $past_q);
                                 </div>
 
                                 <div class="mt-auto d-flex justify-content-between align-items-center pt-3 border-top">
-                                    <small class="text-muted">By <strong><?php echo explode(' ', $row['full_name'])[0]; ?></strong></small>
-                                    <a href="view_event.php?id=<?php echo $row['id']; ?>" class="btn btn-primary btn-view shadow-sm">Details</a>
-                                </div>
+                            <small class="text-muted">By <strong><?php echo explode(' ', $row['full_name'])[0]; ?></strong></small>
+                            <div class="d-flex gap-2">
+                                <!-- যদি আমি অর্গানাইজার হই তবে এডিট বাটন দেখাবে -->
+                                <?php if($row['organizer_id'] == $current_user_id || $user_role == 'admin'): ?>
+                                    <a href="edit_event.php?id=<?php echo $row['id']; ?>" class="btn btn-sm btn-outline-secondary rounded-circle" title="Edit Event">
+                                        <i class="bi bi-pencil-square"></i>
+                                    </a>
+                                    <!-- ডিলিট অপশনও একবারে দিয়ে দিচ্ছি কারণ এটিও দরকার হবে -->
+                                    <a href="delete_event.php?id=<?php echo $row['id']; ?>" class="btn btn-sm btn-outline-danger rounded-circle" onclick="return confirm('Delete this event?')" title="Delete Event">
+                                        <i class="bi bi-trash"></i>
+                                    </a>
+                                <?php endif; ?>
+                                
+                                <a href="view_event.php?id=<?php echo $row['id']; ?>" class="btn btn-primary btn-view shadow-sm">Details</a>
+                            </div>
+                        </div>
                             </div>
                         </div>
                     </div>
