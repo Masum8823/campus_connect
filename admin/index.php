@@ -42,6 +42,9 @@ $total_items = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total 
             <a href="../user/dashboard.php" class="nav-link"><i class="bi bi-arrow-left-circle me-2"></i> User View</a>
             <hr>
             <a href="../auth/logout.php" class="nav-link text-danger"><i class="bi bi-power me-2"></i> Logout</a>
+            <a href="suggestions.php" class="nav-link text-white">
+                <i class="bi bi-chat-right-heart me-2"></i> User Suggestions
+            </a>        
         </nav>
     </div>
 

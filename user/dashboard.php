@@ -194,6 +194,9 @@ $unread_notifs = $notif_count_res['total'];
                 <?php endif; ?>
             </a>
             <a href="../alumni/index.php" class="nav-link"><i class="bi bi-award-fill text-dark"></i> <span>Alumni Hub</span></a>
+            <a href="submit_suggestion.php" class="nav-link">
+                <i class="bi bi-lightbulb-fill text-warning"></i> <span>Suggestion Box</span>
+            </a>
         </nav>
     </div>
 
