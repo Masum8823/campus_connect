@@ -432,3 +432,14 @@ CREATE TABLE IF NOT EXISTS notifications (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
+
+CREATE TABLE IF NOT EXISTS suggestions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT,
+    subject VARCHAR(255),
+    suggestion_text TEXT,
+    is_anonymous TINYINT(1) DEFAULT 0, -- ১ হলে নাম হাইড থাকবে
+    status ENUM('new', 'reviewed', 'implemented') DEFAULT 'new',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
