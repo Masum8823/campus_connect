@@ -1,6 +1,6 @@
 <?php
 include '../config.php';
-// সেশন অলরেডি config.php তে স্টার্ট করা আছে
+// config.php-তে সেশন অলরেডি স্টার্ট করা আছে
 
 if(!isset($_SESSION['user_id'])){
     header("Location: ../auth/login.php"); exit();
@@ -46,14 +46,19 @@ $conversations = mysqli_query($conn, $query);
         
         /* Chat Card Styles */
         .chat-item-wrapper { position: relative; margin-bottom: 12px; }
-        .chat-item { border-radius: 20px; border: none; transition: 0.3s; background: white; display: block; color: inherit; box-shadow: 0 2px 10px rgba(0,0,0,0.03); text-decoration: none; padding-right: 60px !important; }
-        .chat-item:hover { transform: translateX(5px); box-shadow: 0 5px 20px rgba(0,0,0,0.08); background: #fff; }
+        .chat-item { border-radius: 20px; border: none; transition: 0.3s; background: white; display: block; box-shadow: 0 2px 10px rgba(0,0,0,0.03); overflow: hidden; }
+        .chat-item:hover { transform: translateX(5px); box-shadow: 0 5px 20px rgba(0,0,0,0.08); }
         
+        /* Avatar & Link Styling */
+        .avatar-link { z-index: 20; position: relative; transition: 0.2s; }
+        .avatar-link:hover { opacity: 0.8; }
         .user-avatar { width: 55px; height: 55px; object-fit: cover; border-radius: 18px; border: 2px solid #f8f9fa; }
         .online-badge { position: absolute; bottom: -2px; right: -2px; width: 14px; height: 14px; background-color: #198754; border: 2px solid white; border-radius: 50%; }
-        .last-msg-preview { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 80%; color: #6c757d; font-size: 13.5px; }
+        
+        .chat-link { flex-grow: 1; text-decoration: none; color: inherit; padding: 15px; padding-left: 5px; }
+        .last-msg-preview { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 250px; color: #6c757d; font-size: 13.5px; }
 
-        /* Delete Button - Fixed Positioning */
+        /* Delete Button */
         .delete-conv-btn { 
             position: absolute; 
             right: 15px; 
@@ -114,21 +119,26 @@ $conversations = mysqli_query($conn, $query);
                     $is_online = (time() - strtotime($row['last_activity'])) < 120;
                 ?>
                     <div class="chat-item-wrapper">
-                        <!-- Main Chat Card -->
-                        <a href="chat.php?user_id=<?php echo $row['other_user_id']; ?>" class="card chat-item shadow-sm p-3">
-                            <div class="d-flex align-items-center">
-                                <div class="position-relative me-3">
+                        <!-- Chat Card changed to DIV to allow nested specific links -->
+                        <div class="card chat-item shadow-sm d-flex flex-row align-items-center px-3">
+                            
+                            <!-- 1. Clickable Avatar leading to Profile -->
+                            <a href="profile.php?id=<?php echo $row['other_user_id']; ?>" class="avatar-link my-3">
+                                <div class="position-relative">
                                     <?php $img = ($row['profile_pic'] != 'default.png') ? "../" . $row['profile_pic'] : "https://ui-avatars.com/api/?name=".urlencode($row['full_name']); ?>
                                     <img src="<?php echo $img; ?>" class="user-avatar shadow-sm">
                                     <?php if($is_online): ?>
                                         <span class="online-badge" title="Online"></span>
                                     <?php endif; ?>
                                 </div>
-                                
-                                <div class="flex-grow-1 overflow-hidden">
+                            </a>
+
+                            <!-- 2. Clickable Body leading to Chat -->
+                            <a href="chat.php?user_id=<?php echo $row['other_user_id']; ?>" class="chat-link">
+                                <div class="overflow-hidden">
                                     <div class="d-flex justify-content-between align-items-center">
                                         <h6 class="mb-0 fw-bold text-dark"><?php echo $row['full_name']; ?></h6>
-                                        <small class="text-muted" style="font-size: 11px;">
+                                        <small class="text-muted pe-4" style="font-size: 11px;">
                                             <?php echo $row['last_time'] ? getTimeAgo($row['last_time']) : ''; ?>
                                         </small>
                                     </div>
@@ -136,10 +146,10 @@ $conversations = mysqli_query($conn, $query);
                                         <?php echo $row['last_msg'] ? htmlspecialchars($row['last_msg']) : '<span class="text-primary">Start a conversation...</span>'; ?>
                                     </p>
                                 </div>
-                            </div>
-                        </a>
+                            </a>
+                        </div>
 
-                        <!-- Delete Button - Independent Link -->
+                        <!-- 3. Delete Button (Stays independent) -->
                         <a href="delete_conversation.php?conv_id=<?php echo $row['conv_id']; ?>" 
                            class="delete-conv-btn" 
                            onclick="return confirm('Are you sure you want to delete this entire chat history?')"
