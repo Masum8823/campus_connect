@@ -445,3 +445,18 @@ CREATE TABLE IF NOT EXISTS suggestions (
 );
 
 ALTER TABLE alumni_jobs MODIFY COLUMN target_dept VARCHAR(255);
+
+CREATE TABLE IF NOT EXISTS marketplace_items (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    seller_id INT, -- ইউজারের আইডি (যে বিক্রি করছে)
+    item_name VARCHAR(255) NOT NULL,
+    category ENUM('Books', 'Electronics', 'Cycles', 'Hostel Essentials', 'Lab Tools', 'Others') DEFAULT 'Others',
+    price DECIMAL(10, 2) NOT NULL,
+    price_type ENUM('Fixed', 'Negotiable') DEFAULT 'Fixed',
+    item_condition VARCHAR(100), -- যেমন: 9/10, Used 1 year
+    description TEXT,
+    item_image VARCHAR(255) DEFAULT 'no_product.png',
+    status ENUM('available', 'sold') DEFAULT 'available',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (seller_id) REFERENCES users(id) ON DELETE CASCADE
+);
