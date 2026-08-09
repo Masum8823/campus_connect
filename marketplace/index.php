@@ -171,9 +171,17 @@ $items = mysqli_query($conn, $sql);
                                                 <?php echo $is_balanced = $is_sold ? 'Mark as Available' : 'Mark as Sold'; ?>
                                             </a>
                                             <div class="d-flex gap-2">
-                                                <a href="view_item.php?id=<?php echo $row['id']; ?>" class="btn btn-primary btn-sm rounded-pill flex-grow-1">Details</a>
-                                                <a href="delete_item.php?id=<?php echo $row['id']; ?>" class="btn btn-light border btn-sm rounded-pill px-3" onclick="return confirm('Delete Ad?')"><i class="bi bi-trash"></i></a>
-                                            </div>
+                                            <a href="view_item.php?id=<?php echo $row['id']; ?>" class="btn btn-primary btn-sm rounded-pill flex-grow-1">Details</a>
+                                            
+                                            <!-- এডিট বাটন যোগ করা হলো -->
+                                            <a href="edit_item.php?id=<?php echo $row['id']; ?>" class="btn btn-light border btn-sm rounded-pill px-3" title="Edit Ad">
+                                                <i class="bi bi-pencil-square"></i>
+                                            </a>
+                                            
+                                            <a href="delete_item.php?id=<?php echo $row['id']; ?>" class="btn btn-light border btn-sm rounded-pill px-3 text-danger" onclick="return confirm('Delete Ad?')">
+                                                <i class="bi bi-trash"></i>
+                                            </a>
+                                        </div>
                                         </div>
                                     <?php else: ?>
                                         <a href="view_item.php?id=<?php echo $row['id']; ?>" class="btn <?php echo $is_sold ? 'btn-secondary disabled' : 'btn-primary shadow-sm'; ?> w-100 fw-bold rounded-pill py-2">
