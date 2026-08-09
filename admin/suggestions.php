@@ -84,6 +84,7 @@ $res = mysqli_query($conn, $query);
             <a href="manage_lost_found.php" class="nav-link"><i class="bi bi-search"></i> <span>Lost & Found</span></a>
             <a href="manage_academic.php" class="nav-link"><i class="bi bi-mortarboard-fill"></i> <span>Academic Hub</span></a>
             <a href="manage_content.php" class="nav-link"><i class="bi bi-file-post"></i> <span>Content Moderation</span></a>
+            <a href="manage_marketplace.php" class="nav-link"><i class="bi bi-shop me-2"></i> Marketplace</a>
             <a href="suggestions.php" class="nav-link active"><i class="bi bi-lightbulb-fill text-warning"></i> <span>Suggestions</span></a>
             <hr class="text-secondary">
             <a href="../user/dashboard.php" class="nav-link"><i class="bi bi-display"></i> <span>User View</span></a>

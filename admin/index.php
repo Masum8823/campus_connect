@@ -53,6 +53,7 @@ $recent_users = mysqli_query($conn, "SELECT * FROM users ORDER BY created_at DES
             <a href="manage_lost_found.php" class="nav-link"><i class="bi bi-search me-2"></i> Lost & Found</a>
             <a href="manage_academic.php" class="nav-link"><i class="bi bi-mortarboard-fill me-2"></i> Academic Resources</a>
             <a href="manage_content.php" class="nav-link"><i class="bi bi-file-post me-2"></i> Content Moderation</a>
+            <a href="manage_marketplace.php" class="nav-link"><i class="bi bi-shop me-2"></i> Marketplace</a>
             <a href="suggestions.php" class="nav-link"><i class="bi bi-lightbulb-fill me-2 text-warning"></i> Suggestions</a>
             <hr class="text-secondary">
             <a href="../user/dashboard.php" class="nav-link"><i class="bi bi-display me-2"></i> User View</a>
