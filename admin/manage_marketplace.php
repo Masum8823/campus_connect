@@ -1,0 +1,174 @@
+<?php
+include '../config.php';
+// সেশন অলরেডি config.php-তে চেক করা আছে
+
+if(!isset($_SESSION['user_id']) || $_SESSION['role'] != 'admin'){
+    header("Location: ../auth/login.php"); exit();
+}
+
+// ১. মার্কেটপ্লেস আইটেম ডিলিট করার লজিক (ইমেজ ক্লিনআপসহ)
+if(isset($_GET['delete_item'])){
+    $item_id = mysqli_real_escape_string($conn, $_GET['delete_item']);
+    
+    // ইমেজ খুঁজে বের করা যাতে সার্ভার থেকেও ডিলিট করা যায়
+    $img_query = mysqli_query($conn, "SELECT item_image FROM marketplace_items WHERE id='$item_id'");
+    $img_data = mysqli_fetch_assoc($img_query);
+
+    // সার্ভার থেকে ছবি মুছে ফেলা (যদি ডিফল্ট ইমেজ না হয়)
+    if(!empty($img_data['item_image']) && $img_data['item_image'] != 'uploads/marketplace/no_product.png' && file_exists("../".$img_data['item_image'])){
+        unlink("../".$img_data['item_image']);
+    }
+
+    // ডাটাবেস থেকে রেকর্ড ডিলিট করা
+    if(mysqli_query($conn, "DELETE FROM marketplace_items WHERE id='$item_id'")){
+        header("Location: manage_marketplace.php?msg=deleted");
+        exit();
+    }
+}
+
+// ২. কুইক পরিসংখ্যান আনা
+$total_ads = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM marketplace_items"))['total'];
+$available_ads = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM marketplace_items WHERE status='available'"))['total'];
+
+// ৩. সব আইটেম তুলে আনা (সেলার তথ্যসহ)
+$query = "SELECT marketplace_items.*, users.full_name, users.dept FROM marketplace_items 
+          JOIN users ON marketplace_items.seller_id = users.id 
+          ORDER BY created_at DESC";
+$items = mysqli_query($conn, $query);
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Marketplace | Admin Hub</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary-color: #0d6efd; --sidebar-bg: #1a1d20; --bg-light: #f4f7f6; }
+        body { background-color: var(--bg-light); font-family: 'Plus Jakarta Sans', sans-serif; padding-top: 20px; }
+        
+        /* Sidebar Styling */
+        .sidebar { position: fixed; left: 0; top: 0; bottom: 0; width: 260px; background: var(--sidebar-bg); padding: 20px; color: white; z-index: 1000; }
+        .main-content { margin-left: 260px; padding: 30px; }
+        .nav-link { color: #adb5bd; padding: 12px; border-radius: 12px; margin-bottom: 5px; transition: 0.3s; border: none; text-align: left; display: flex; align-items: center; text-decoration: none; }
+        .nav-link:hover, .nav-link.active { background: var(--primary-color); color: white; }
+        .nav-link i { font-size: 1.2rem; margin-right: 12px; }
+
+        /* Stats & Table Cards */
+        .stat-mini-card { border-radius: 20px; border: none; background: white; box-shadow: 0 4px 12px rgba(0,0,0,0.03); padding: 15px 25px; display: flex; align-items: center; }
+        .table-card { border-radius: 25px; border: none; background: white; box-shadow: 0 10px 40px rgba(0,0,0,0.05); overflow: hidden; }
+        .table thead { background-color: #f8f9fa; }
+        .table thead th { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #888; padding: 18px 15px; border: none; }
+        .table tbody td { padding: 15px; border-bottom: 1px solid #f1f2f4; vertical-align: middle; }
+        
+        .product-img-sm { width: 50px; height: 50px; object-fit: cover; border-radius: 12px; border: 2px solid #eee; }
+        .badge-status { font-size: 10px; font-weight: 800; padding: 5px 12px; border-radius: 50px; text-transform: uppercase; }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar Navigation -->
+    <div class="sidebar shadow">
+        <h4 class="fw-bold text-center mb-4 text-primary mt-2">Admin Control</h4>
+        <nav class="nav flex-column">
+            <a href="index.php" class="nav-link"><i class="bi bi-grid-1x2-fill"></i> <span>Dashboard</span></a>
+            <a href="manage_users.php" class="nav-link"><i class="bi bi-people-fill"></i> <span>Manage Users</span></a>
+            <a href="manage_lost_found.php" class="nav-link"><i class="bi bi-search"></i> <span>Lost & Found</span></a>
+            <a href="manage_academic.php" class="nav-link"><i class="bi bi-mortarboard-fill"></i> <span>Academic Hub</span></a>
+            <a href="manage_marketplace.php" class="nav-link active"><i class="bi bi-cart-check-fill"></i> <span>Marketplace</span></a>
+            <a href="manage_content.php" class="nav-link"><i class="bi bi-file-post"></i> <span>Content Moderation</span></a>
+            <a href="suggestions.php" class="nav-link"><i class="bi bi-lightbulb-fill"></i> <span>Suggestions</span></a>
+            <hr class="text-secondary">
+            <a href="../user/dashboard.php" class="nav-link"><i class="bi bi-display"></i> <span>User View</span></a>
+            <a href="../auth/logout.php" class="nav-link text-danger"><i class="bi bi-power"></i> <span>Logout</span></a>
+        </nav>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="main-content">
+        <div class="row align-items-center mb-4">
+            <div class="col-md-6">
+                <h2 class="fw-bold text-dark mb-1">Marketplace Moderation</h2>
+                <p class="text-muted small">Manage all buy & sell listings on campus.</p>
+            </div>
+            <div class="col-md-6">
+                <div class="d-flex justify-content-end gap-3">
+                    <div class="stat-mini-card">
+                        <div class="text-primary me-3 fs-4"><i class="bi bi-shop"></i></div>
+                        <div><h5 class="mb-0 fw-bold"><?php echo $available_ads; ?></h5><small class="text-muted">Available</small></div>
+                    </div>
+                    <div class="stat-mini-card">
+                        <div class="text-success me-3 fs-4"><i class="bi bi-bag-check-fill"></i></div>
+                        <div><h5 class="mb-0 fw-bold"><?php echo $total_ads; ?></h5><small class="text-muted">Total Ads</small></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <?php if(isset($_GET['msg'])): ?>
+            <div class="alert alert-success border-0 shadow-sm rounded-4 mb-4 py-2 small">Advertisement removed successfully.</div>
+        <?php endif; ?>
+
+        <!-- Marketplace Table -->
+        <div class="card table-card">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th class="ps-4">Product Info</th>
+                            <th>Category</th>
+                            <th>Price</th>
+                            <th>Seller</th>
+                            <th>Status</th>
+                            <th class="text-center">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php if(mysqli_num_rows($items) > 0): ?>
+                            <?php while($row = mysqli_fetch_assoc($items)): ?>
+                                <tr>
+                                    <td class="ps-4">
+                                        <div class="d-flex align-items-center">
+                                            <img src="../<?php echo $row['item_image']; ?>" class="product-img-sm me-3 shadow-sm">
+                                            <div>
+                                                <div class="fw-bold text-dark small"><?php echo $row['item_name']; ?></div>
+                                                <small class="text-muted" style="font-size: 10px;">Condition: <?php echo $row['item_condition']; ?></small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td><span class="badge bg-light text-dark border small fw-normal"><?php echo $row['category']; ?></span></td>
+                                    <td>
+                                        <div class="fw-bold text-primary">৳ <?php echo number_format($row['price']); ?></div>
+                                        <small class="text-muted" style="font-size: 10px;"><?php echo $row['price_type']; ?></small>
+                                    </td>
+                                    <td>
+                                        <div class="small fw-bold"><?php echo $row['full_name']; ?></div>
+                                        <small class="text-muted" style="font-size: 10px;"><?php echo $row['dept']; ?></small>
+                                    </td>
+                                    <td>
+                                        <span class="badge <?php echo $row['status'] == 'available' ? 'bg-success-subtle text-success' : 'bg-secondary-subtle text-secondary'; ?> badge-status">
+                                            <?php echo $row['status']; ?>
+                                        </span>
+                                    </td>
+                                    <td class="text-center">
+                                        <a href="?delete_item=<?php echo $row['id']; ?>" class="btn btn-sm btn-light border text-danger rounded-circle px-2" onclick="return confirm('Delete this advertisement permanently?')" title="Remove Ad">
+                                            <i class="bi bi-trash"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            <?php endwhile; ?>
+                        <?php else: ?>
+                            <tr><td colspan="6" class="text-center py-5 text-muted">No items found in marketplace.</td></tr>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
