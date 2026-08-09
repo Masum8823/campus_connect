@@ -61,8 +61,11 @@ $items = mysqli_query($conn, $sql);
         .price-badge { position: absolute; bottom: 15px; left: 15px; background: rgba(0, 0, 0, 0.7); color: white; padding: 5px 15px; border-radius: 50px; font-weight: 700; backdrop-filter: blur(5px); }
         .cat-tag { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; padding: 4px 10px; border-radius: 50px; background: #fff4e6; color: #d9480f; }
         
-        .seller-info { background: #f8f9fa; border-radius: 12px; padding: 8px 12px; display: flex; align-items: center; margin-top: 15px; }
+        /* Updated Seller Info Style */
+        .seller-info { background: #f8f9fa; border-radius: 12px; padding: 8px 12px; display: flex; align-items: center; margin-top: 15px; transition: 0.2s; border: 1px solid transparent; }
+        .seller-info:hover { background: #eef2ff; border-color: #0d6efd; }
         .seller-img { width: 28px; height: 28px; object-fit: cover; border-radius: 50%; border: 1px solid #ddd; }
+        .seller-link { text-decoration: none; display: block; }
     </style>
 </head>
 <body>
@@ -131,11 +134,14 @@ $items = mysqli_query($conn, $sql);
                                 
                                 <p class="text-secondary small" style="height: 40px; overflow: hidden;"><?php echo nl2br(substr($row['description'], 0, 75)); ?>...</p>
 
-                                <div class="seller-info">
-                                    <?php $p_pic = ($row['profile_pic'] != 'default.png') ? "../" . $row['profile_pic'] : "https://ui-avatars.com/api/?name=".urlencode($row['full_name']); ?>
-                                    <img src="<?php echo $p_pic; ?>" class="seller-img me-2">
-                                    <small class="text-dark fw-bold">Seller: <?php echo explode(' ', $row['full_name'])[0]; ?></small>
-                                </div>
+                                <!-- Updated: Clickable Seller Info with Full Name -->
+                                <a href="../user/profile.php?id=<?php echo $row['seller_id']; ?>" class="seller-link">
+                                    <div class="seller-info">
+                                        <?php $p_pic = ($row['profile_pic'] != 'default.png') ? "../" . $row['profile_pic'] : "https://ui-avatars.com/api/?name=".urlencode($row['full_name']); ?>
+                                        <img src="<?php echo $p_pic; ?>" class="seller-img me-2 shadow-sm">
+                                        <small class="text-dark fw-bold">Seller: <?php echo $row['full_name']; ?></small>
+                                    </div>
+                                </a>
 
                                 <div class="mt-4">
                                     <a href="view_item.php?id=<?php echo $row['id']; ?>" class="btn btn-primary w-100 fw-bold rounded-pill shadow-sm py-2">
