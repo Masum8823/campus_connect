@@ -10,11 +10,12 @@ $current_user_id = $_SESSION['user_id'];
 // ফিল্টার প্যারামিটার ধরা
 $search = $_GET['search'] ?? '';
 $cat_filter = $_GET['category'] ?? '';
+$status_filter = $_GET['status'] ?? ''; // New: available / sold
 $sort = $_GET['sort'] ?? 'desc';
 
 // কুয়েরি তৈরি: সেলারের নামসহ সব আইটেম আনা
 $sql = "SELECT marketplace_items.*, users.full_name, users.profile_pic FROM marketplace_items 
-        JOIN users ON marketplace_items.seller_id = users.id WHERE status = 'available'";
+        JOIN users ON marketplace_items.seller_id = users.id WHERE 1=1";
 
 if($search) {
     $safe_search = mysqli_real_escape_string($conn, $search);
@@ -26,7 +27,13 @@ if($cat_filter) {
     $sql .= " AND category = '$safe_cat'";
 }
 
-$sql .= " ORDER BY created_at " . ($sort == 'asc' ? 'ASC' : 'DESC');
+// স্ট্যাটাস ফিল্টার লজিক
+if($status_filter) {
+    $safe_status = mysqli_real_escape_string($conn, $status_filter);
+    $sql .= " AND status = '$safe_status'";
+}
+
+$sql .= " ORDER BY (status = 'available') DESC, created_at " . ($sort == 'asc' ? 'ASC' : 'DESC');
 $items = mysqli_query($conn, $sql);
 ?>
 
@@ -51,21 +58,25 @@ $items = mysqli_query($conn, $sql);
         .search-input { border-radius: 50px; background: #f0f2f5; border: 1px solid #eee; padding-left: 45px; }
 
         /* Product Card Style */
-        .product-card { border-radius: 22px; border: none; background: white; transition: 0.3s; box-shadow: var(--card-shadow); overflow: hidden; height: 100%; display: flex; flex-direction: column; }
+        .product-card { border-radius: 22px; border: none; background: white; transition: 0.3s; box-shadow: var(--card-shadow); overflow: hidden; height: 100%; display: flex; flex-direction: column; position: relative; }
         .product-card:hover { transform: translateY(-8px); box-shadow: 0 15px 35px rgba(0,0,0,0.1); }
         
         .img-container { height: 220px; overflow: hidden; position: relative; background: #eee; }
         .product-img { width: 100%; height: 100%; object-fit: cover; transition: 0.5s; }
         .product-card:hover .product-img { transform: scale(1.1); }
         
-        .price-badge { position: absolute; bottom: 15px; left: 15px; background: rgba(0, 0, 0, 0.7); color: white; padding: 5px 15px; border-radius: 50px; font-weight: 700; backdrop-filter: blur(5px); }
+        .price-badge { position: absolute; bottom: 15px; left: 15px; background: rgba(0, 0, 0, 0.7); color: white; padding: 5px 15px; border-radius: 50px; font-weight: 700; backdrop-filter: blur(5px); z-index: 5; }
         .cat-tag { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; padding: 4px 10px; border-radius: 50px; background: #fff4e6; color: #d9480f; }
         
-        /* Updated Seller Info Style */
         .seller-info { background: #f8f9fa; border-radius: 12px; padding: 8px 12px; display: flex; align-items: center; margin-top: 15px; transition: 0.2s; border: 1px solid transparent; }
         .seller-info:hover { background: #eef2ff; border-color: #0d6efd; }
         .seller-img { width: 28px; height: 28px; object-fit: cover; border-radius: 50%; border: 1px solid #ddd; }
         .seller-link { text-decoration: none; display: block; }
+
+        /* Sold Out Styling */
+        .sold-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; z-index: 4; backdrop-filter: blur(2px); }
+        .sold-badge-text { background: #dc3545; color: white; padding: 5px 20px; border-radius: 50px; font-weight: 800; font-size: 14px; letter-spacing: 1px; transform: rotate(-10deg); box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+        .is-sold-img { filter: grayscale(100%); }
     </style>
 </head>
 <body>
@@ -76,7 +87,7 @@ $items = mysqli_query($conn, $sql);
             <a class="navbar-brand fw-bold fs-4" href="../user/dashboard.php">
                 <i class="bi bi-cart-check-fill me-2"></i>Campus Marketplace
             </a>
-            <div class="ms-auto">
+            <div class="ms-auto d-flex align-items-center">
                 <a href="../user/dashboard.php" class="btn btn-light btn-sm fw-bold rounded-pill px-4 me-2">Dashboard</a>
                 <a href="post_item.php" class="btn btn-warning btn-sm fw-bold rounded-pill px-4 shadow-sm text-dark">+ Sell Item</a>
             </div>
@@ -87,7 +98,7 @@ $items = mysqli_query($conn, $sql);
         <!-- Search and Filter Bar -->
         <div class="filter-section mt-4">
             <form method="GET" class="row g-3">
-                <div class="col-md-5 position-relative">
+                <div class="col-md-4 position-relative">
                     <i class="bi bi-search position-absolute" style="left: 30px; top: 12px; color: #aaa;"></i>
                     <input type="text" name="search" class="form-control search-input" placeholder="What are you looking for?" value="<?php echo htmlspecialchars($search); ?>">
                 </div>
@@ -101,26 +112,36 @@ $items = mysqli_query($conn, $sql);
                         <option value="Lab Tools" <?php if($cat_filter == 'Lab Tools') echo 'selected'; ?>>Lab Tools</option>
                     </select>
                 </div>
-                <div class="col-md-2">
-                    <select name="sort" class="form-select rounded-pill shadow-sm" onchange="this.form.submit()">
-                        <option value="desc" <?php echo ($sort == 'desc') ? 'selected' : ''; ?>>Newest</option>
-                        <option value="asc" <?php echo ($sort == 'asc') ? 'selected' : ''; ?>>Price: Low to High</option>
+                <div class="col-md-3">
+                    <select name="status" class="form-select rounded-pill shadow-sm" onchange="this.form.submit()">
+                        <option value="">Status: All</option>
+                        <option value="available" <?php if($status_filter == 'available') echo 'selected'; ?>>Available Now</option>
+                        <option value="sold" <?php if($status_filter == 'sold') echo 'selected'; ?>>Sold Out</option>
                     </select>
                 </div>
                 <div class="col-md-2">
-                    <button type="submit" class="btn btn-dark w-100 rounded-pill fw-bold">Search</button>
+                    <button type="submit" class="btn btn-dark w-100 rounded-pill fw-bold">Apply</button>
                 </div>
             </form>
         </div>
 
         <div class="row">
             <?php if(mysqli_num_rows($items) > 0): ?>
-                <?php while($row = mysqli_fetch_assoc($items)): ?>
+                <?php while($row = mysqli_fetch_assoc($items)): 
+                    $is_sold = ($row['status'] == 'sold');
+                ?>
                     <div class="col-lg-4 col-md-6 mb-4">
                         <div class="card product-card">
                             <div class="img-container">
-                                <img src="../<?php echo $row['item_image']; ?>" class="product-img" alt="Product Image">
+                                <!-- Price -->
                                 <div class="price-badge">৳ <?php echo number_format($row['price']); ?></div>
+                                
+                                <!-- Sold Overlay -->
+                                <?php if($is_sold): ?>
+                                    <div class="sold-overlay"><span class="sold-badge-text">SOLD OUT</span></div>
+                                <?php endif; ?>
+
+                                <img src="../<?php echo $row['item_image']; ?>" class="product-img <?php echo $is_sold ? 'is-sold-img' : ''; ?>" alt="Product Image">
                             </div>
 
                             <div class="card-body p-4">
@@ -134,7 +155,6 @@ $items = mysqli_query($conn, $sql);
                                 
                                 <p class="text-secondary small" style="height: 40px; overflow: hidden;"><?php echo nl2br(substr($row['description'], 0, 75)); ?>...</p>
 
-                                <!-- Updated: Clickable Seller Info with Full Name -->
                                 <a href="../user/profile.php?id=<?php echo $row['seller_id']; ?>" class="seller-link">
                                     <div class="seller-info">
                                         <?php $p_pic = ($row['profile_pic'] != 'default.png') ? "../" . $row['profile_pic'] : "https://ui-avatars.com/api/?name=".urlencode($row['full_name']); ?>
@@ -144,9 +164,22 @@ $items = mysqli_query($conn, $sql);
                                 </a>
 
                                 <div class="mt-4">
-                                    <a href="view_item.php?id=<?php echo $row['id']; ?>" class="btn btn-primary w-100 fw-bold rounded-pill shadow-sm py-2">
-                                        VIEW DETAILS
-                                    </a>
+                                    <?php if($row['seller_id'] == $current_user_id): ?>
+                                        <!-- Controls for Owner -->
+                                        <div class="d-grid gap-2">
+                                            <a href="toggle_status.php?id=<?php echo $row['id']; ?>" class="btn <?php echo $is_sold ? 'btn-outline-success' : 'btn-outline-danger'; ?> btn-sm rounded-pill fw-bold">
+                                                <?php echo $is_balanced = $is_sold ? 'Mark as Available' : 'Mark as Sold'; ?>
+                                            </a>
+                                            <div class="d-flex gap-2">
+                                                <a href="view_item.php?id=<?php echo $row['id']; ?>" class="btn btn-primary btn-sm rounded-pill flex-grow-1">Details</a>
+                                                <a href="delete_item.php?id=<?php echo $row['id']; ?>" class="btn btn-light border btn-sm rounded-pill px-3" onclick="return confirm('Delete Ad?')"><i class="bi bi-trash"></i></a>
+                                            </div>
+                                        </div>
+                                    <?php else: ?>
+                                        <a href="view_item.php?id=<?php echo $row['id']; ?>" class="btn <?php echo $is_sold ? 'btn-secondary disabled' : 'btn-primary shadow-sm'; ?> w-100 fw-bold rounded-pill py-2">
+                                            <?php echo $is_sold ? 'NOT AVAILABLE' : 'VIEW DETAILS'; ?>
+                                        </a>
+                                    <?php endif; ?>
                                 </div>
                             </div>
                         </div>
@@ -155,8 +188,7 @@ $items = mysqli_query($conn, $sql);
             <?php else: ?>
                 <div class="col-12 text-center py-5">
                     <i class="bi bi-shop display-1 text-muted opacity-25"></i>
-                    <h4 class="mt-3 text-muted fw-bold">Marketplace is empty!</h4>
-                    <p class="text-muted small">Be the first one to sell something on campus.</p>
+                    <h4 class="mt-3 text-muted fw-bold">No matching items found.</h4>
                 </div>
             <?php endif; ?>
         </div>
