@@ -16,8 +16,15 @@ $stu_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FR
 $tea_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM users WHERE role='teacher'"))['total'];
 $alu_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM users WHERE role='alumni'"))['total'];
 
-// ৩. লেটেস্ট ৫ জন ইউজার
-$recent_users = mysqli_query($conn, "SELECT * FROM users ORDER BY created_at DESC LIMIT 5");
+// --- ৩. সার্চ লজিক ---
+$search = isset($_GET['search']) ? mysqli_real_escape_string($conn, $_GET['search']) : '';
+$search_query = "";
+if(!empty($search)){
+    $search_query = " AND (full_name LIKE '%$search%' OR email LIKE '%$search%' OR university_id LIKE '%$search%')";
+}
+
+// ৪. ইউজার লিস্ট আনা (সার্চ থাকলে ফিল্টার হবে, না থাকলে লেটেস্ট ৫ জন)
+$recent_users = mysqli_query($conn, "SELECT * FROM users WHERE role != 'admin' $search_query ORDER BY created_at DESC LIMIT 5");
 ?>
 
 <!DOCTYPE html>
@@ -29,14 +36,20 @@ $recent_users = mysqli_query($conn, "SELECT * FROM users ORDER BY created_at DES
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
-        body { background-color: #f4f7f6; font-family: 'Plus Jakarta Sans', sans-serif; }
-        .sidebar { position: fixed; left: 0; top: 0; bottom: 0; width: 260px; background: #1a1d20; padding: 20px; color: white; z-index: 1000; }
+        :root { --primary-color: #0d6efd; --sidebar-bg: #1a1d20; --bg-light: #f4f7f6; }
+        body { background-color: var(--bg-light); font-family: 'Plus Jakarta Sans', sans-serif; padding-top: 20px; }
+        
+        .sidebar { position: fixed; left: 0; top: 0; bottom: 0; width: 260px; background: var(--sidebar-bg); padding: 20px; color: white; z-index: 1000; }
         .main-content { margin-left: 260px; padding: 30px; }
-        .nav-link { color: #adb5bd; padding: 12px; border-radius: 12px; margin-bottom: 5px; transition: 0.3s; border: none; text-align: left; }
-        .nav-link:hover, .nav-link.active { background: #0d6efd; color: white; }
+        .nav-link { color: #adb5bd; padding: 12px; border-radius: 12px; margin-bottom: 5px; transition: 0.3s; border: none; text-align: left; text-decoration: none; display: block; }
+        .nav-link:hover, .nav-link.active { background: var(--primary-color); color: white; }
         
         .stat-card { border-radius: 20px; border: none; box-shadow: 0 5px 15px rgba(0,0,0,0.05); position: relative; overflow: hidden; }
         .card-icon { position: absolute; right: 20px; top: 20px; font-size: 2rem; opacity: 0.15; }
+        
+        /* Search Bar Style */
+        .search-container { background: white; border-radius: 15px; padding: 15px 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); border: 1px solid #eee; margin-bottom: 30px; }
+        .search-input { border: none; outline: none; background: #f8f9fa; border-radius: 50px; padding: 10px 20px 10px 45px; width: 100%; font-size: 14px; }
         
         .table-card { border-radius: 20px; border: none; background: white; box-shadow: 0 5px 20px rgba(0,0,0,0.03); }
         .role-indicator { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 5px; }
@@ -51,7 +64,7 @@ $recent_users = mysqli_query($conn, "SELECT * FROM users ORDER BY created_at DES
             <a href="index.php" class="nav-link active"><i class="bi bi-grid-1x2-fill me-2"></i> Dashboard</a>
             <a href="manage_users.php" class="nav-link"><i class="bi bi-people-fill me-2"></i> Manage Users</a>
             <a href="manage_lost_found.php" class="nav-link"><i class="bi bi-search me-2"></i> Lost & Found</a>
-            <a href="manage_academic.php" class="nav-link"><i class="bi bi-mortarboard-fill me-2"></i> Academic Resources</a>
+            <a href="manage_academic.php" class="nav-link"><i class="bi bi-mortarboard-fill me-2"></i> Academic Hub</a>
             <a href="manage_content.php" class="nav-link"><i class="bi bi-file-post me-2"></i> Content Moderation</a>
             <a href="manage_marketplace.php" class="nav-link"><i class="bi bi-shop me-2"></i> Marketplace</a>
             <a href="suggestions.php" class="nav-link"><i class="bi bi-lightbulb-fill me-2 text-warning"></i> Suggestions</a>
@@ -65,7 +78,22 @@ $recent_users = mysqli_query($conn, "SELECT * FROM users ORDER BY created_at DES
     <div class="main-content">
         <div class="mb-4">
             <h2 class="fw-bold text-dark">System Overview</h2>
-            <p class="text-muted small">CampusConnect analytics and recent activities.</p>
+            <p class="text-muted small">Quick search and real-time campus statistics.</p>
+        </div>
+
+        <!-- Quick Search Bar -->
+        <div class="search-container">
+            <form method="GET" action="index.php" class="position-relative">
+                <i class="bi bi-search position-absolute" style="left: 20px; top: 12px; color: #adb5bd;"></i>
+                <div class="row g-2">
+                    <div class="col-md-10">
+                        <input type="text" name="search" class="search-input" placeholder="Quick find member by name, email or ID..." value="<?php echo htmlspecialchars($search); ?>">
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-primary w-100 rounded-pill fw-bold">Search</button>
+                    </div>
+                </div>
+            </form>
         </div>
 
         <!-- Statistics Row -->
@@ -135,33 +163,37 @@ $recent_users = mysqli_query($conn, "SELECT * FROM users ORDER BY created_at DES
                 </div>
             </div>
 
-            <!-- Right: Recent Registrations -->
+            <!-- Right: Recent Registrations / Search Results -->
             <div class="col-md-8 mb-4">
                 <div class="card table-card p-4 h-100">
                     <div class="d-flex justify-content-between align-items-center mb-4">
-                        <h5 class="fw-bold mb-0">Recent Registrations</h5>
+                        <h5 class="fw-bold mb-0"><?php echo empty($search) ? "Recent Registrations" : "Search Results"; ?></h5>
                         <a href="manage_users.php" class="btn btn-sm btn-light border px-3 rounded-pill fw-bold">View All</a>
                     </div>
                     <div class="table-responsive">
                         <table class="table table-hover align-middle">
                             <tbody>
-                                <?php while($user = mysqli_fetch_assoc($recent_users)): ?>
-                                <tr>
-                                    <td>
-                                        <div class="fw-bold small text-dark"><?php echo $user['full_name']; ?></div>
-                                        <small class="text-muted" style="font-size: 10px;"><?php echo $user['email']; ?></small>
-                                    </td>
-                                    <td><span class="badge bg-light text-primary border border-primary border-opacity-10 small" style="font-size: 9px;"><?php echo strtoupper($user['role']); ?></span></td>
-                                    <td><small class="text-muted" style="font-size: 10px;"><?php echo date('M d, Y', strtotime($user['created_at'])); ?></small></td>
-                                    <td class="text-end">
-                                        <?php if($user['is_verified']): ?>
-                                            <i class="bi bi-patch-check-fill text-success" title="Email Verified"></i>
-                                        <?php else: ?>
-                                            <i class="bi bi-clock-history text-warning" title="Verification Pending"></i>
-                                        <?php endif; ?>
-                                    </td>
-                                </tr>
-                                <?php endwhile; ?>
+                                <?php if(mysqli_num_rows($recent_users) > 0): ?>
+                                    <?php while($user = mysqli_fetch_assoc($recent_users)): ?>
+                                    <tr>
+                                        <td>
+                                            <div class="fw-bold small text-dark"><?php echo $user['full_name']; ?></div>
+                                            <small class="text-muted" style="font-size: 10px;"><?php echo $user['email']; ?></small>
+                                        </td>
+                                        <td><span class="badge bg-light text-primary border border-primary border-opacity-10 small" style="font-size: 9px;"><?php echo strtoupper($user['role']); ?></span></td>
+                                        <td><small class="text-muted" style="font-size: 10px;"><?php echo date('M d, Y', strtotime($user['created_at'])); ?></small></td>
+                                        <td class="text-end">
+                                            <?php if($user['is_verified']): ?>
+                                                <i class="bi bi-patch-check-fill text-success" title="Verified"></i>
+                                            <?php else: ?>
+                                                <i class="bi bi-clock-history text-warning" title="Pending"></i>
+                                            <?php endif; ?>
+                                        </td>
+                                    </tr>
+                                    <?php endwhile; ?>
+                                <?php else: ?>
+                                    <tr><td colspan="4" class="text-center py-4 text-muted small">No members found matching "<?php echo htmlspecialchars($search); ?>"</td></tr>
+                                <?php endif; ?>
                             </tbody>
                         </table>
                     </div>
