@@ -16,7 +16,7 @@ if(isset($_GET['delete_file'])){
     $file_query = mysqli_query($conn, "SELECT file_path FROM academic_files WHERE id='$file_id'");
     $file_data = mysqli_fetch_assoc($file_query);
     
-    // সার্ভার থেকে আসল ফাইলটি ডিলিট করা (যদি থাকে)
+    // সার্ভার থেকে আসল ফাইলটি ডিলিট করা
     if(!empty($file_data['file_path']) && file_exists("../".$file_data['file_path'])){
         unlink("../".$file_data['file_path']);
     }
@@ -28,13 +28,24 @@ if(isset($_GET['delete_file'])){
     }
 }
 
-// ৩. কুইক স্ট্যাটাস কাউন্ট
+// --- ৩. সার্চ লজিক ইমপ্লিমেন্টেশন ---
+$search = isset($_GET['search']) ? mysqli_real_escape_string($conn, $_GET['search']) : '';
+$where_sql = "";
+if(!empty($search)){
+    // টাইটেল, ডিপার্টমেন্ট অথবা টিচারের নাম দিয়ে সার্চ
+    $where_sql = " AND (academic_files.title LIKE '%$search%' 
+                    OR academic_files.dept LIKE '%$search%' 
+                    OR users.full_name LIKE '%$search%')";
+}
+
+// ৪. কুইক স্ট্যাটাস কাউন্ট (এটি সার্চের ওপর নির্ভর করবে না, টোটাল দেখাবে)
 $routine_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM academic_files WHERE category IN ('class_routine', 'exam_routine')"))['total'];
 $material_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM academic_files WHERE category = 'course_material'"))['total'];
 
-// ৪. সব একাডেমিক ফাইল তুলে আনা (ইউজারের নামসহ)
+// ৫. সব একাডেমিক ফাইল তুলে আনা (সার্চ ফিল্টারসহ)
 $files_query = "SELECT academic_files.*, users.full_name FROM academic_files 
                 JOIN users ON academic_files.user_id = users.id 
+                WHERE 1=1 $where_sql
                 ORDER BY uploaded_at DESC";
 $files = mysqli_query($conn, $files_query);
 ?>
@@ -52,18 +63,21 @@ $files = mysqli_query($conn, $files_query);
         :root { --primary-color: #0d6efd; --sidebar-bg: #1a1d20; --bg-light: #f4f7f6; }
         body { background-color: var(--bg-light); font-family: 'Plus Jakarta Sans', sans-serif; padding-top: 20px; }
         
-        /* Sidebar Styling */
         .sidebar { position: fixed; left: 0; top: 0; bottom: 0; width: 260px; background: var(--sidebar-bg); padding: 20px; color: white; z-index: 1000; }
         .main-content { margin-left: 260px; padding: 30px; }
-        .nav-link { color: #adb5bd; padding: 12px; border-radius: 12px; margin-bottom: 5px; transition: 0.3s; border: none; text-align: left; display: flex; align-items: center; }
+        .nav-link { color: #adb5bd; padding: 12px; border-radius: 12px; margin-bottom: 5px; transition: 0.3s; border: none; text-align: left; display: flex; align-items: center; text-decoration: none; }
         .nav-link:hover, .nav-link.active { background: var(--primary-color); color: white; }
         .nav-link i { font-size: 1.2rem; margin-right: 12px; }
 
         /* Stats & Table Cards */
-        .stat-mini-card { border-radius: 20px; border: none; background: white; box-shadow: 0 4px 12px rgba(0,0,0,0.03); padding: 20px; display: flex; align-items: center; }
-        .table-card { border-radius: 25px; border: none; background: white; box-shadow: 0 10px 40px rgba(0,0,0,0.05); overflow: hidden; }
+        .stat-mini-card { border-radius: 20px; border: none; background: white; box-shadow: 0 4px 12px rgba(0,0,0,0.03); padding: 15px 25px; display: flex; align-items: center; }
         
-        .resource-icon { width: 40px; height: 40px; background: #f0f7ff; color: var(--primary-color); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+        /* Search Container Style */
+        .search-container { background: white; border-radius: 15px; padding: 15px 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); border: 1px solid #eee; margin-bottom: 25px; }
+        .search-input { border: none; outline: none; background: #f8f9fa; border-radius: 50px; padding: 10px 20px 10px 45px; width: 100%; font-size: 14px; }
+
+        .table-card { border-radius: 25px; border: none; background: white; box-shadow: 0 10px 40px rgba(0,0,0,0.05); overflow: hidden; }
+        .resource-icon { width: 40px; height: 40px; background: #e7f1ff; color: var(--primary-color); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
         .badge-cat { font-size: 10px; text-transform: uppercase; font-weight: 700; padding: 5px 12px; border-radius: 50px; }
     </style>
 </head>
@@ -78,7 +92,7 @@ $files = mysqli_query($conn, $files_query);
             <a href="manage_lost_found.php" class="nav-link"><i class="bi bi-search"></i> <span>Lost & Found</span></a>
             <a href="manage_academic.php" class="nav-link active"><i class="bi bi-mortarboard-fill"></i> <span>Academic Hub</span></a>
             <a href="manage_content.php" class="nav-link"><i class="bi bi-file-post"></i> <span>Content Moderation</span></a>
-            <a href="manage_marketplace.php" class="nav-link"><i class="bi bi-shop me-2"></i> Marketplace</a>
+            <a href="manage_marketplace.php" class="nav-link"><i class="bi bi-shop"></i> <span>Marketplace</span></a>
             <a href="suggestions.php" class="nav-link"><i class="bi bi-lightbulb-fill"></i> <span>Suggestions</span></a>
             <hr class="text-secondary">
             <a href="../user/dashboard.php" class="nav-link"><i class="bi bi-display"></i> <span>User View</span></a>
@@ -86,12 +100,12 @@ $files = mysqli_query($conn, $files_query);
         </nav>
     </div>
 
-    <!-- Main Content -->
+    <!-- Main Content Area -->
     <div class="main-content">
         <div class="row align-items-center mb-4">
             <div class="col-md-6">
-                <h2 class="fw-bold text-dark">Academic Hub Management</h2>
-                <p class="text-muted small">Monitor and manage all routines and course materials.</p>
+                <h2 class="fw-bold text-dark mb-1">Academic Resources</h2>
+                <p class="text-muted small">Search and manage all shared university materials.</p>
             </div>
             <div class="col-md-6">
                 <div class="d-flex justify-content-end gap-3">
@@ -107,10 +121,26 @@ $files = mysqli_query($conn, $files_query);
             </div>
         </div>
 
+        <!-- Premium Search Bar -->
+        <div class="search-container">
+            <form method="GET" action="manage_academic.php" class="position-relative">
+                <i class="bi bi-search position-absolute" style="left: 20px; top: 12px; color: #adb5bd;"></i>
+                <div class="row g-2">
+                    <div class="col-md-10">
+                        <input type="text" name="search" class="search-input" placeholder="Search by resource title, department or teacher name..." value="<?php echo htmlspecialchars($search); ?>">
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-primary w-100 rounded-pill fw-bold">Search</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
         <?php if(isset($_GET['msg'])): ?>
-            <div class="alert alert-success border-0 shadow-sm rounded-4 mb-4">Resource deleted successfully.</div>
+            <div class="alert alert-success border-0 shadow-sm rounded-4 mb-4">Action performed successfully.</div>
         <?php endif; ?>
 
+        <!-- Resources Table -->
         <div class="card table-card">
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0">
@@ -120,7 +150,7 @@ $files = mysqli_query($conn, $files_query);
                             <th>Category</th>
                             <th>Uploaded By</th>
                             <th>Date</th>
-                            <th class="text-center">Actions</th>
+                            <th class="text-center">Action</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -129,7 +159,7 @@ $files = mysqli_query($conn, $files_query);
                                 <tr>
                                     <td class="ps-4">
                                         <div class="d-flex align-items-center">
-                                            <div class="resource-icon me-3"><i class="bi bi-file-earmark-zip"></i></div>
+                                            <div class="resource-icon me-3"><i class="bi bi-file-earmark-pdf-fill"></i></div>
                                             <div>
                                                 <span class="fw-bold text-dark d-block"><?php echo $row['title']; ?></span>
                                                 <small class="text-muted"><?php echo $row['dept']; ?> Department</small>
@@ -142,24 +172,24 @@ $files = mysqli_query($conn, $files_query);
                                         </span>
                                     </td>
                                     <td>
-                                        <div class="small fw-bold"><?php echo $row['full_name']; ?></div>
+                                        <div class="small fw-bold text-dark"><?php echo $row['full_name']; ?></div>
                                     </td>
                                     <td><small class="text-muted"><?php echo date('M d, Y', strtotime($row['uploaded_at'])); ?></small></td>
                                     <td class="text-center">
                                         <div class="btn-group">
                                             <?php if($row['file_path']): ?>
-                                                <a href="../<?php echo $row['file_path']; ?>" class="btn btn-sm btn-light border" download title="Download"><i class="bi bi-download"></i></a>
+                                                <a href="../<?php echo $row['file_path']; ?>" class="btn btn-sm btn-light border px-2" download title="Download"><i class="bi bi-download"></i></a>
                                             <?php endif; ?>
                                             <?php if($row['external_link']): ?>
-                                                <a href="<?php echo $row['external_link']; ?>" target="_blank" class="btn btn-sm btn-light border text-info" title="Open Link"><i class="bi bi-link-45deg"></i></a>
+                                                <a href="<?php echo $row['external_link']; ?>" target="_blank" class="btn btn-sm btn-light border text-info px-2" title="Open Link"><i class="bi bi-link-45deg"></i></a>
                                             <?php endif; ?>
-                                            <a href="?delete_file=<?php echo $row['id']; ?>" class="btn btn-sm btn-light border text-danger" onclick="return confirm('Delete permanently?')" title="Delete"><i class="bi bi-trash"></i></a>
+                                            <a href="?delete_file=<?php echo $row['id']; ?>" class="btn btn-sm btn-light border text-danger px-2" onclick="return confirm('Delete this resource permanently?')" title="Delete"><i class="bi bi-trash"></i></a>
                                         </div>
                                     </td>
                                 </tr>
                             <?php endwhile; ?>
                         <?php else: ?>
-                            <tr><td colspan="5" class="text-center py-5 text-muted">No academic resources found.</td></tr>
+                            <tr><td colspan="5" class="text-center py-5 text-muted">No academic resources found matching your search.</td></tr>
                         <?php endif; ?>
                     </tbody>
                 </table>
