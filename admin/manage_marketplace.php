@@ -26,13 +26,25 @@ if(isset($_GET['delete_item'])){
     }
 }
 
-// ২. কুইক পরিসংখ্যান আনা
+// --- ৩. সার্চ লজিক ইমপ্লিমেন্টেশন ---
+$search = isset($_GET['search']) ? mysqli_real_escape_string($conn, $_GET['search']) : '';
+$where_sql = "";
+if(!empty($search)){
+    // আইটেম নাম, ক্যাটাগরি, ডিপার্টমেন্ট অথবা বিক্রেতার নাম দিয়ে সার্চ
+    $where_sql = " AND (marketplace_items.item_name LIKE '%$search%' 
+                    OR marketplace_items.category LIKE '%$search%' 
+                    OR users.full_name LIKE '%$search%' 
+                    OR users.dept LIKE '%$search%')";
+}
+
+// ২. কুইক পরিসংখ্যান আনা (সবসময় টোটাল দেখাবে)
 $total_ads = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM marketplace_items"))['total'];
 $available_ads = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM marketplace_items WHERE status='available'"))['total'];
 
-// ৩. সব আইটেম তুলে আনা (সেলার তথ্যসহ)
+// ৪. সব আইটেম তুলে আনা (সেলার তথ্য এবং সার্চ ফিল্টারসহ)
 $query = "SELECT marketplace_items.*, users.full_name, users.dept FROM marketplace_items 
           JOIN users ON marketplace_items.seller_id = users.id 
+          WHERE 1=1 $where_sql
           ORDER BY created_at DESC";
 $items = mysqli_query($conn, $query);
 ?>
@@ -57,14 +69,18 @@ $items = mysqli_query($conn, $query);
         .nav-link:hover, .nav-link.active { background: var(--primary-color); color: white; }
         .nav-link i { font-size: 1.2rem; margin-right: 12px; }
 
-        /* Stats & Table Cards */
+        /* Stats & Search Styles */
         .stat-mini-card { border-radius: 20px; border: none; background: white; box-shadow: 0 4px 12px rgba(0,0,0,0.03); padding: 15px 25px; display: flex; align-items: center; }
+        .search-container { background: white; border-radius: 15px; padding: 15px 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); border: 1px solid #eee; margin-bottom: 25px; }
+        .search-input { border-radius: 50px; background: #f8f9fa; border: none; outline: none; padding: 10px 20px 10px 45px; width: 100%; font-size: 14px; }
+
+        /* Table Card Styling */
         .table-card { border-radius: 25px; border: none; background: white; box-shadow: 0 10px 40px rgba(0,0,0,0.05); overflow: hidden; }
         .table thead { background-color: #f8f9fa; }
         .table thead th { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #888; padding: 18px 15px; border: none; }
         .table tbody td { padding: 15px; border-bottom: 1px solid #f1f2f4; vertical-align: middle; }
         
-        .product-img-sm { width: 50px; height: 50px; object-fit: cover; border-radius: 12px; border: 2px solid #eee; }
+        .product-img-sm { width: 45px; height: 45px; object-fit: cover; border-radius: 10px; border: 1px solid #eee; }
         .badge-status { font-size: 10px; font-weight: 800; padding: 5px 12px; border-radius: 50px; text-transform: uppercase; }
     </style>
 </head>
@@ -92,7 +108,7 @@ $items = mysqli_query($conn, $query);
         <div class="row align-items-center mb-4">
             <div class="col-md-6">
                 <h2 class="fw-bold text-dark mb-1">Marketplace Moderation</h2>
-                <p class="text-muted small">Manage all buy & sell listings on campus.</p>
+                <p class="text-muted small">Search and manage all buy & sell listings on campus.</p>
             </div>
             <div class="col-md-6">
                 <div class="d-flex justify-content-end gap-3">
@@ -108,8 +124,23 @@ $items = mysqli_query($conn, $query);
             </div>
         </div>
 
+        <!-- Premium Search Bar -->
+        <div class="search-container">
+            <form method="GET" action="manage_marketplace.php" class="position-relative">
+                <i class="bi bi-search position-absolute" style="left: 20px; top: 12px; color: #adb5bd;"></i>
+                <div class="row g-2">
+                    <div class="col-md-10">
+                        <input type="text" name="search" class="search-input" placeholder="Search by item name, seller name, category or department..." value="<?php echo htmlspecialchars($search); ?>">
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-primary w-100 rounded-pill fw-bold">Search</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
         <?php if(isset($_GET['msg'])): ?>
-            <div class="alert alert-success border-0 shadow-sm rounded-4 mb-4 py-2 small">Advertisement removed successfully.</div>
+            <div class="alert alert-success border-0 shadow-sm rounded-4 mb-4 py-2 small">Action performed successfully.</div>
         <?php endif; ?>
 
         <!-- Marketplace Table -->
@@ -132,20 +163,20 @@ $items = mysqli_query($conn, $query);
                                 <tr>
                                     <td class="ps-4">
                                         <div class="d-flex align-items-center">
-                                            <img src="../<?php echo $row['item_image']; ?>" class="product-img-sm me-3 shadow-sm">
+                                            <img src="../<?php echo $row['item_image']; ?>" class="product-img-sm me-3 shadow-sm border">
                                             <div>
                                                 <div class="fw-bold text-dark small"><?php echo $row['item_name']; ?></div>
-                                                <small class="text-muted" style="font-size: 10px;">Condition: <?php echo $row['item_condition']; ?></small>
+                                                <small class="text-muted" style="font-size: 10px;">Cond: <?php echo $row['item_condition']; ?></small>
                                             </div>
                                         </div>
                                     </td>
                                     <td><span class="badge bg-light text-dark border small fw-normal"><?php echo $row['category']; ?></span></td>
                                     <td>
-                                        <div class="fw-bold text-primary">৳ <?php echo number_format($row['price']); ?></div>
-                                        <small class="text-muted" style="font-size: 10px;"><?php echo $row['price_type']; ?></small>
+                                        <div class="fw-bold text-primary small">৳ <?php echo number_format($row['price']); ?></div>
+                                        <small class="text-muted" style="font-size: 9px;"><?php echo $row['price_type']; ?></small>
                                     </td>
                                     <td>
-                                        <div class="small fw-bold"><?php echo $row['full_name']; ?></div>
+                                        <div class="small fw-bold text-dark"><?php echo $row['full_name']; ?></div>
                                         <small class="text-muted" style="font-size: 10px;"><?php echo $row['dept']; ?></small>
                                     </td>
                                     <td>
@@ -161,7 +192,7 @@ $items = mysqli_query($conn, $query);
                                 </tr>
                             <?php endwhile; ?>
                         <?php else: ?>
-                            <tr><td colspan="6" class="text-center py-5 text-muted">No items found in marketplace.</td></tr>
+                            <tr><td colspan="6" class="text-center py-5 text-muted">No matching items found in marketplace.</td></tr>
                         <?php endif; ?>
                     </tbody>
                 </table>
